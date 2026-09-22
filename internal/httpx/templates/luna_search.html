@@ -1,0 +1,22 @@
+{{define "luna_search.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>订单查询 | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"></head>
+<body>
+<div class="background"></div>
+<div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="header-box"><a href="/"><div class="info">{{.Site.TextLogo}}</div></a></div></div></div></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="main-box">
+<div class="title"><span>订单查询</span></div>
+<form class="layui-form" method="post" action="/search-order-by-sn">
+<div class="layui-form-item"><label class="layui-form-label">订单号</label><div class="layui-input-block"><input class="layui-input" name="order_sn"></div></div>
+<button class="layui-btn" type="submit">查询</button>
+</form>
+<form class="layui-form" method="post" action="/search-order-by-email">
+<div class="layui-form-item"><label class="layui-form-label">邮箱</label><div class="layui-input-block"><input class="layui-input" name="email"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">查询密码</label><div class="layui-input-block"><input class="layui-input" name="search_pwd"></div></div>
+<button class="layui-btn" type="submit">查询</button>
+</form>
+<form method="post" action="/search-order-by-browser"><button class="layui-btn layui-btn-primary" type="submit">查询本机订单</button></form>
+</div></div></div></div>
+<div class="footer"><p>Powered by <a href="/">Dufaka-Go</a></p></div>
+</body></html>{{end}}

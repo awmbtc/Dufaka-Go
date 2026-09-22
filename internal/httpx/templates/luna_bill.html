@@ -1,0 +1,25 @@
+{{define "luna_bill.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>确认订单 | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"></head>
+<body>
+<div class="background"></div>
+<div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="header-box"><a href="/"><div class="info">{{.Site.TextLogo}}</div></a></div></div></div></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="main-box">
+<div class="pay-title">确认订单</div>
+<div class="layui-card-body">
+<p style="color:#3C8CE7;font-size:18px;font-weight:700;text-align:center;margin:20px 0">请在 {{.Site.ExpireMin}} 分钟内完成支付，逾期订单会关闭。</p>
+<table class="layui-table" lay-skin="nob">
+<tbody>
+<tr><td>订单号</td><td>{{.Order.SN}}</td></tr>
+<tr><td>商品名称</td><td>{{.Order.Title}}</td></tr>
+<tr><td>商品单价</td><td>￥{{yuan .Order.GoodsPrice}}</td></tr>
+<tr><td>购买数量</td><td>{{.Order.Amount}}</td></tr>
+<tr><td>邮箱</td><td>{{.Order.Email}}</td></tr>
+<tr><td>实际支付</td><td>￥{{yuan .Order.Actual}}</td></tr>
+<tr><td>订单状态</td><td>{{status .Order.Status}}</td></tr>
+</tbody></table>
+{{if eq .Order.Status 1}}<div style="text-align:center"><a class="layui-btn" href="/pay-gateway/{{.Pay.Check}}/{{.Pay.Check}}/{{.Order.SN}}">去支付 {{.Pay.Name}}</a></div>{{end}}
+</div></div></div></div></div>
+<div class="footer"><p>Powered by <a href="/">Dufaka-Go</a></p></div>
+</body></html>{{end}}

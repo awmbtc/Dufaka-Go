@@ -1,0 +1,38 @@
+{{define "hyper_buy.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Good.Name}} | {{.Site.Title}}</title>
+<link href="/assets/hyper/css/icons.min.css" rel="stylesheet">
+<link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet">
+<link href="/assets/hyper/css/hyper.css" rel="stylesheet"></head>
+<body data-layout="topnav"><div class="wrapper"><div class="content-page"><div class="content">
+<div class="header-navbar"><div class="container header-flex"><a href="/" class="topnav-logo"><div class="logo-title">{{.Site.TextLogo}}</div></a><a class="btn btn-outline-primary" href="/order-search">查询订单</a></div></div>
+<div class="container">
+<div class="row"><div class="col-12"><div class="page-title-box"><h4 class="page-title">商品详情</h4></div></div></div>
+<div class="buy-grid"><div class="buy-shop hyper-sm-last"><div class="card card-body">
+<form action="/create-order" method="post">
+<input type="hidden" name="gid" value="{{.Good.ID}}">
+<div class="form-group"><h3>{{.Good.Name}}</h3></div>
+<div class="form-group">
+{{if eq .Good.Type 1}}<span class="badge badge-outline-primary">自动发货</span>{{else}}<span class="badge badge-outline-danger">人工发货</span>{{end}}
+<span class="badge badge-outline-primary">库存({{.Good.InStock}})</span>
+</div>
+<div class="form-group"><div class="buy-title">价格</div><h3 class="buy-price">¥ {{yuan .Good.Actual}}</h3></div>
+<div class="form-group"><label>邮箱</label><input class="form-control" type="email" name="email" required></div>
+<div class="form-group"><label>购买数量</label><input class="form-control" type="number" name="by_amount" min="1" value="1"></div>
+<div class="form-group"><label>优惠码</label><input class="form-control" name="coupon_code"></div>
+{{if .Site.SearchPwd}}<div class="form-group"><label>查询密码</label><input class="form-control" name="search_pwd" required></div>{{end}}
+<div class="form-group"><label>支付方式</label>
+{{range $i, $p := .Pays}}<div class="form-check"><label class="form-check-label"><input class="form-check-input" type="radio" name="payway" value="{{$p.ID}}" {{if eq $i 0}}checked{{end}}> {{$p.Name}}</label></div>{{end}}
+</div>
+<button class="btn btn-danger" type="submit">下单</button>
+</form>
+</div></div>
+<div class="card card-body mt-3">{{.Good.Description}}</div>
+</div>
+</div></div>
+<footer class="hyper-footer"><div class="container">Powered by <a href="/">Dufaka-Go</a></div></footer>
+</div></div>
+<script src="/assets/hyper/js/jquery-3.4.1.min.js"></script>
+<script src="/assets/hyper/js/vendor.min.js"></script>
+<script src="/assets/hyper/js/app.min.js"></script>
+</body></html>{{end}}

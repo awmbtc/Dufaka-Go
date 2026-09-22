@@ -1,0 +1,14 @@
+{{define "hyper_search.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>订单查询 | {{.Site.Title}}</title>
+<link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet"><link href="/assets/hyper/css/hyper.css" rel="stylesheet"></head>
+<body data-layout="topnav"><div class="wrapper"><div class="content-page"><div class="content">
+<div class="header-navbar"><div class="container header-flex"><a href="/" class="topnav-logo"><div class="logo-title">{{.Site.TextLogo}}</div></a></div></div>
+<div class="container"><div class="row"><div class="col-md-8"><div class="card"><div class="card-body">
+<h4>订单查询</h4>
+<form method="post" action="/search-order-by-sn" class="mb-3"><label>订单号</label><input class="form-control" name="order_sn"><button class="btn btn-danger mt-2">查询</button></form>
+<form method="post" action="/search-order-by-email" class="mb-3"><label>邮箱</label><input class="form-control" name="email"><label>查询密码</label><input class="form-control" name="search_pwd"><button class="btn btn-danger mt-2">查询</button></form>
+<form method="post" action="/search-order-by-browser"><button class="btn btn-outline-primary">查询本机订单</button></form>
+</div></div></div></div></div>
+<footer class="hyper-footer"><div class="container">Powered by <a href="/">Dufaka-Go</a></div></footer>
+</div></div></body></html>{{end}}

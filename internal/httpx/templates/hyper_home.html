@@ -1,0 +1,38 @@
+{{define "hyper_home.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>首页 | {{.Site.Title}}</title>
+<link href="/assets/hyper/css/icons.min.css" rel="stylesheet">
+<link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet">
+<link href="/assets/hyper/css/hyper.css" rel="stylesheet">
+</head>
+<body data-layout="topnav"><div class="wrapper"><div class="content-page"><div class="content">
+<div class="header-navbar"><div class="container header-flex">
+<a href="/" class="topnav-logo"><div class="logo-title">{{.Site.TextLogo}}</div></a>
+<a class="btn btn-outline-primary" href="/order-search">查询订单</a>
+</div></div>
+<div class="container">
+<div class="row"><div class="col-12"><div class="page-title-box"><h4 class="page-title"><button type="button" class="btn btn-outline-primary" id="notice-open">公告</button></h4></div></div></div>
+<div class="nav nav-list">
+<a href="#group-all" class="tab-link active" data-bs-toggle="tab"><span class="tab-title">全部</span><div class="img-checkmark"><img src="/assets/hyper/images/check.png" alt=""></div></a>
+{{range .Groups}}<a href="#group-{{.ID}}" class="tab-link" data-bs-toggle="tab"><span class="tab-title">{{.Name}}</span><div class="img-checkmark"><img src="/assets/hyper/images/check.png" alt=""></div></a>{{end}}
+</div>
+<div class="tab-content">
+<div class="tab-pane active" id="group-all"><div class="hyper-wrapper">
+{{range .Groups}}{{range .Goods}}
+<a href="{{if gt .InStock 0}}/buy/{{.ID}}{{else}}javascript:void(0);{{end}}" class="home-card category">
+<img class="home-img" src="{{if .Picture}}{{.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" alt="">
+<div class="flex"><p class="name">{{.Name}}</p><div class="price">¥<b>{{yuan .Actual}}</b></div></div>
+</a>
+{{end}}{{end}}
+</div></div>
+</div>
+<div class="modal fade" id="notice-modal"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">{{.Site.Notice}}</div></div></div></div>
+</div></div>
+<footer class="hyper-footer"><div class="container"><div class="row"><div class="col-md-6"><div class="footer-links">Powered by <a href="/">Dufaka-Go</a></div></div><div class="col-md-6"><div class="text-md-right footer-links">{{.Site.Footer}}</div></div></div></div></footer>
+</div></div>
+<script src="/assets/hyper/js/jquery-3.4.1.min.js"></script>
+<script src="/assets/hyper/js/vendor.min.js"></script>
+<script src="/assets/hyper/js/app.min.js"></script>
+<script src="/assets/hyper/js/hyper.js"></script>
+</body></html>{{end}}

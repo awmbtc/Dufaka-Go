@@ -1,0 +1,20 @@
+{{define "luna_orders.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>订单详情 | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"></head>
+<body>
+<div class="background"></div>
+<div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="header-box"><a href="/"><div class="info">{{.Site.TextLogo}}</div></a><div class="query"><a href="/order-search"><span>订单查询</span></a></div></div></div></div></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="main-box">
+{{range .Orders}}
+<table class="layui-table"><tbody>
+<tr><td>订单号</td><td>{{.SN}}</td></tr>
+<tr><td>商品</td><td>{{.Title}} × {{.Amount}}</td></tr>
+<tr><td>金额</td><td>￥{{yuan .Actual}}</td></tr>
+<tr><td>状态</td><td>{{status .Status}}</td></tr>
+<tr><td>详情</td><td><pre>{{.Info}}</pre></td></tr>
+</tbody></table>
+{{end}}
+</div></div></div></div>
+<div class="footer"><p>Powered by <a href="/">Dufaka-Go</a></p></div>
+</body></html>{{end}}

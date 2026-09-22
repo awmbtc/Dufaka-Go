@@ -57,6 +57,7 @@ func New(db *store.DB, base, configPath string) (*App, error) {
 				return "未知"
 			}
 		},
+		"lunaGoods": lunaGoods,
 	}).ParseFS(files, "templates/*.html")
 	if err != nil {
 		return nil, err
@@ -129,9 +130,22 @@ func (a *App) guard(next http.Handler) http.Handler {
 
 func (a *App) view(w http.ResponseWriter, name string, data any) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := a.tpl.ExecuteTemplate(w, name, data); err != nil {
+	if err := a.render(w, name, data); err != nil {
 		http.Error(w, err.Error(), 500)
 	}
+}
+
+func (a *App) render(w io.Writer, name string, data any) error {
+	chosen := name
+	if m, ok := data.(map[string]any); ok {
+		if site, ok := m["Site"].(store.Site); ok && (site.Template == "luna" || site.Template == "hyper") {
+			alt := site.Template + "_" + name
+			if a.tpl.Lookup(alt) != nil {
+				chosen = alt
+			}
+		}
+	}
+	return a.tpl.ExecuteTemplate(w, chosen, data)
 }
 
 func (a *App) home(w http.ResponseWriter, r *http.Request) {

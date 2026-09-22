@@ -1,0 +1,10 @@
+{{define "hyper_orders.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>订单详情 | {{.Site.Title}}</title>
+<link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet"><link href="/assets/hyper/css/hyper.css" rel="stylesheet"></head>
+<body data-layout="topnav"><div class="wrapper"><div class="content-page"><div class="content">
+<div class="container">
+{{range .Orders}}<div class="card"><div class="card-body"><h4>{{.SN}}</h4><p>{{.Title}} × {{.Amount}} · ¥{{yuan .Actual}} · {{status .Status}}</p><pre>{{.Info}}</pre></div></div>{{end}}
+</div>
+<footer class="hyper-footer"><div class="container">Powered by <a href="/">Dufaka-Go</a></div></footer>
+</div></div></body></html>{{end}}

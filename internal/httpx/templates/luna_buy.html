@@ -1,0 +1,50 @@
+{{define "luna_buy.html"}}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>{{.Good.Name}} | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
+<link rel="stylesheet" href="/assets/luna/main.css">
+</head>
+<body>
+<div class="background"></div>
+<div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="header-box">
+<a href="/"><div class="info">{{.Site.TextLogo}}</div></a>
+<div class="query layui-hide-xs"><a href="/order-search"><span>订单查询</span></a></div>
+</div></div></div></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="main-box">
+<div class="title"><span>商品信息</span></div>
+<div class="layui-col-md4 layui-col-sm12"><div class="goods-img"><img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" alt=""></div></div>
+<form class="layui-form layui-form-pane" action="/create-order" method="post">
+<input type="hidden" name="gid" value="{{.Good.ID}}">
+<div class="layui-col-md8 layui-col-sm12"><div class="goods-msg">
+<div class="goods-name"><span>{{.Good.Name}}
+{{if eq .Good.Type 1}}<span class="small-tips tips-green">自动发货</span>{{else}}<span class="small-tips tips-yellow">人工处理</span>{{end}}
+<span class="small-tips tips-blue">库存({{.Good.InStock}})</span>
+</span></div>
+<div class="price"><span class="price-sign">￥</span><span class="price-num">{{yuan .Good.Actual}}</span></div>
+<div class="entry">
+<div class="layui-form-item"><label class="layui-form-label">邮箱</label><div class="layui-input-block"><input type="email" name="email" required class="layui-input"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">数量</label><div class="layui-input-block"><input type="number" name="by_amount" value="1" min="1" required class="layui-input"></div></div>
+<div class="layui-form-item"><label class="layui-form-label">优惠码</label><div class="layui-input-block"><input type="text" name="coupon_code" class="layui-input"></div></div>
+{{if .Site.SearchPwd}}<div class="layui-form-item"><label class="layui-form-label">查询密码</label><div class="layui-input-block"><input type="text" name="search_pwd" required class="layui-input"></div></div>{{end}}
+<div class="pay-box">
+{{range $i, $p := .Pays}}
+<label class="pay-type" data-id="{{$p.ID}}" data-type="{{$p.Check}}" data-name="{{$p.Name}}"></label>
+{{end}}
+<input type="hidden" name="payway" value="{{if .Pays}}{{(index .Pays 0).ID}}{{end}}">
+</div>
+<button class="layui-btn layui-btn-fluid" type="submit">立即下单</button>
+</div>
+</div></div>
+</form>
+<div style="clear:both"></div>
+<div class="introduce">{{.Good.Description}}</div>
+</div></div></div></div>
+<div class="footer"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><p>Powered by <a href="/">Dufaka-Go</a></p></div></div></div>
+<script>let tipsMsg = {least_one:"至少购买 1 件", exceeds:"超过库存", exceeds_limit:"超过限购", mobile_order:"请在手机完成订单"}; let limitNum = {{.Good.BuyLimit}}; let stock = {{.Good.InStock}};</script>
+<script src="/assets/luna/layui/layui.js"></script>
+<script src="/assets/luna/js/jquery-3.4.1.min.js"></script>
+<script src="/assets/luna/main.js"></script>
+</body></html>{{end}}

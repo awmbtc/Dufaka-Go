@@ -1,0 +1,67 @@
+{{define "luna_home.html"}}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>首页 | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
+<link rel="stylesheet" href="/assets/luna/main.css">
+<link rel="shortcut icon" href="/assets/style/favicon.ico">
+</head>
+<body>
+<div class="background"></div>
+<div class="header">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+            <div class="header-box">
+                <a href="/"><div class="info">{{.Site.TextLogo}}</div></a>
+                <div class="query layui-hide-xs"><a href="/order-search"><span>订单查询</span></a></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="main layui-hide-xs">
+    <div class="layui-row"><div class="layui-col-sm12"><div class="main-box">
+        <div class="title"><p class="tit">站点公告:</p></div>
+        <div class="goods"><div class="tips">{{.Site.Notice}}</div></div>
+    </div></div></div>
+</div>
+<div class="main">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+            <div class="main-box">
+                <div class="title"><span>选择分类</span></div>
+                <div class="cate"></div>
+                <div class="goods">
+                    <p class="title-2"><span>选择商品</span></p>
+                    <div class="goods-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="footer">
+    <div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+        <div style="text-align:center">{{.Site.Footer}}</div>
+        <p>Powered by <a href="/">Dufaka-Go</a></p>
+    </div></div>
+</div>
+<div class="query-m"><a href="/order-search"><span>订单查询</span></a></div>
+<script id="cateTpl" type="text/html">
+    <div class="cate-box" data-key="<< d.key >>"><p><< d.gp_name >></p><div>商品数量：<< d.goods.length >></div></div>
+</script>
+<script id="goodsTpl" type="text/html">
+    <a href="<<# if(d.in_stock > 0){ >>/buy/<< d.id >><<# } else { >>javascript:void(0);<<# }; >>" class="goods-box">
+        <div class="picture"><img src="<< d.picture >>" alt=""></div>
+        <div class="msg">
+            <div class="goods-name"><< d.gd_name >></div>
+            <div class="goods-price">￥<< d.actual_price >></div>
+            <div class="goods-num"><div><p style="width: << d.proportion >>%;"></p></div><span>剩余<< d.in_stock >>件</span></div>
+        </div>
+    </a>
+</script>
+<script>let title = "站点公告"; let goodsMsg = {{lunaGoods .Groups}};</script>
+<script src="/assets/luna/layui/layui.js"></script>
+<script src="/assets/luna/js/jquery-3.4.1.min.js"></script>
+<script src="/assets/luna/main.js"></script>
+</body></html>{{end}}
