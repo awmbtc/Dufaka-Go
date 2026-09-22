@@ -169,8 +169,13 @@ func Run(ctx context.Context, f Form, configPath string) (Result, error) {
 			return Result{}, fmt.Errorf("创建数据表失败：%s", cleanErr(err))
 		}
 	}
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return Result{}, err
+	}
+	defer tx.Rollback(ctx)
 	var admins int
-	if err := conn.QueryRow(ctx, `SELECT count(*) FROM admin_users`).Scan(&admins); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT count(*) FROM admin_users`).Scan(&admins); err != nil {
 		return Result{}, err
 	}
 	if admins > 0 {
@@ -180,7 +185,7 @@ func Run(ctx context.Context, f Form, configPath string) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	if _, err := conn.Exec(ctx, `INSERT INTO admin_users (username, password, name, created_at, updated_at) VALUES ($1,$2,$3,now(),now())`, f.Admin, string(hash), f.Admin); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO admin_users (username, password, name, created_at, updated_at) VALUES ($1,$2,$3,now(),now())`, f.Admin, string(hash), f.Admin); err != nil {
 		return Result{}, err
 	}
 	settings := [][2]string{
@@ -190,13 +195,17 @@ func Run(ctx context.Context, f Form, configPath string) (Result, error) {
 		{"language", "zh_CN"},
 		{"order_expire_time", "5"},
 		{"app_url", strings.TrimRight(f.AppURL, "/")},
+		{"notice", "欢迎来到 Clodex小店。"},
 	}
 	for _, kv := range settings {
-		if _, err := conn.Exec(ctx, `INSERT INTO settings (key, value, updated_at) VALUES ($1,$2,now()) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=now()`, kv[0], kv[1]); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO settings (key, value, updated_at) VALUES ($1,$2,now()) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=now()`, kv[0], kv[1]); err != nil {
 			return Result{}, err
 		}
 	}
-	if err := seed(ctx, conn); err != nil {
+	if err := seed(ctx, tx); err != nil {
+		return Result{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return Result{}, err
 	}
 	sessionKey, err := randomKey()
@@ -246,7 +255,11 @@ func applySchema(ctx context.Context, conn *pgx.Conn) error {
 	return nil
 }
 
-func seed(ctx context.Context, conn *pgx.Conn) error {
+type execer interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+func seed(ctx context.Context, conn execer) error {
 	_, err := conn.Exec(ctx, `
 		INSERT INTO pays (pay_name, pay_check, pay_method, pay_client, merchant_id, merchant_key, merchant_pem, pay_handleroute, is_open, created_at, updated_at)
 		SELECT '微信扫码', 'wescan', 2, 3, '', '', '', '/pay/wepay', 0, now(), now()
@@ -256,7 +269,7 @@ func seed(ctx context.Context, conn *pgx.Conn) error {
 	}
 	mails := []struct{ name, token, body string }{
 		{"发货通知", "card_send_user_email", "您在 {webname} 购买的 {ord_title} 已发货。\n订单号：{order_id}\n数量：{buy_amount}\n金额：{ord_price}\n内容：\n{ord_info}"},
-		{"人工处理通知", "manual_send_manage_mail", "有新的人工处理订单 {order_id}，商品 {ord_title}，邮箱 {ord_info}"},
+		{"人工处理通知", "manual_send_manage_mail", "有新的人工处理订单 {order_id}，商品 {ord_title}。"},
 		{"待处理", "pending_order", "订单 {order_id} 待处理。商品 {ord_title}，金额 {ord_price}。"},
 		{"已完成", "completed_order", "订单 {order_id} 已完成。商品 {ord_title}。"},
 		{"失败", "failed_order", "订单 {order_id} 处理失败。商品 {ord_title}。"},
@@ -264,8 +277,8 @@ func seed(ctx context.Context, conn *pgx.Conn) error {
 	for _, m := range mails {
 		if _, err := conn.Exec(ctx, `
 			INSERT INTO emailtpls (tpl_name, tpl_content, tpl_token, created_at, updated_at)
-			SELECT $1, $2, $3, now(), now()
-			WHERE NOT EXISTS (SELECT 1 FROM emailtpls WHERE tpl_token=$3)`, m.name, m.body, m.token); err != nil {
+			SELECT $1::text, $2::text, $3::text, now(), now()
+			WHERE NOT EXISTS (SELECT 1 FROM emailtpls WHERE tpl_token=$3::text)`, m.name, m.body, m.token); err != nil {
 			return err
 		}
 	}
