@@ -1,0 +1,145 @@
+{{define "head"}}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{.Title}} - 后台</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; color: #1f2328; background: #f3f5f8; }
+a { color: #1d4f91; text-decoration: none; }
+a:hover { text-decoration: underline; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.app { display: flex; min-height: 100vh; }
+aside { width: 220px; flex: none; background: #1b2430; color: #d5dbe3; padding: 16px 12px 24px; }
+aside .brand { color: #fff; font-weight: 650; margin: 4px 8px 16px; }
+aside .who { margin: 0 8px 12px; color: #9aa6b2; font-size: 12px; }
+aside .group { margin: 16px 8px 6px; font-size: 12px; color: #8b97a3; }
+aside a { display: block; color: #d5dbe3; padding: 7px 10px; border-radius: 6px; text-decoration: none; }
+aside a.on, aside a:hover { background: #2d6cdf; color: #fff; }
+aside form { margin: 16px 8px 0; }
+aside button.link { width: 100%; background: transparent; color: #d5dbe3; border: 1px solid #3a4654; border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+.content { flex: 1; min-width: 0; padding: 20px 24px 40px; }
+h1 { font-size: 20px; margin: 0 0 14px; }
+h2 { font-size: 16px; margin: 0 0 12px; }
+.card { background: #fff; border: 1px solid #e4e8ee; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e8edf2; vertical-align: top; white-space: nowrap; }
+td.wrap { white-space: normal; max-width: 280px; }
+th { color: #5c6770; font-weight: 600; background: #fafbfc; }
+.field { margin-bottom: 12px; }
+.field label, .checks label { display: block; margin-bottom: 4px; }
+.field input[type="text"], .field input[type="password"], .field input[type="number"], .field select, .field textarea,
+.filters input, .filters select { width: 100%; max-width: 640px; padding: 7px 8px; border: 1px solid #cfd6dd; border-radius: 6px; background: #fff; }
+.field textarea { min-height: 120px; }
+.help { margin: 4px 0 0; color: #66707a; font-size: 12px; }
+.row-actions form { display: inline; }
+.row-actions button, .btn, button.primary { border: 0; background: #2d6cdf; color: #fff; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+button.ghost, a.btn-ghost { background: #eef1f4; color: #1f2328; border-radius: 6px; padding: 6px 12px; display: inline-block; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-bottom: 12px; }
+.filters label { font-size: 12px; color: #5c6770; display: block; }
+.filters input, .filters select { width: 180px; }
+.banner { padding: 8px 12px; border-radius: 6px; margin: 0 0 12px; }
+.banner.ok { background: #e8f6ee; color: #146c36; }
+.banner.err { background: #fdecec; color: #a12622; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.stat b { display: block; font-size: 22px; margin-top: 4px; }
+.thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; background: #eef1f4; }
+.checks { max-height: 220px; overflow: auto; border: 1px solid #e4e8ee; border-radius: 6px; padding: 8px; max-width: 640px; }
+.checks label { display: flex; gap: 6px; align-items: center; }
+.login-wrap { max-width: 420px; margin: 10vh auto; padding: 0 16px; }
+.pager { display: flex; gap: 12px; }
+.radios label { display: inline-flex; gap: 4px; margin-right: 12px; align-items: center; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@media (max-width: 800px) {
+  .app { display: block; }
+  aside { width: auto; }
+  aside nav { display: flex; flex-wrap: wrap; gap: 4px; }
+  aside .group { width: 100%; }
+  .content { padding: 16px; }
+}
+</style>
+</head>
+<body>
+{{if .User}}
+<div class="app">
+<aside>
+<div class="brand">独角数卡</div>
+<div class="who">{{.User}}</div>
+<nav>
+<p class="group">概览</p>
+<a class="{{if eq .Nav "home"}}on{{end}}" href="/admin">仪表盘</a>
+<p class="group">商品管理</p>
+<a class="{{if eq .Nav "goods"}}on{{end}}" href="/admin/goods">商品列表</a>
+<a class="{{if eq .Nav "groups"}}on{{end}}" href="/admin/groups">商品分类</a>
+<p class="group">卡密管理</p>
+<a class="{{if eq .Nav "carmis"}}on{{end}}" href="/admin/carmis">卡密列表</a>
+<a class="{{if eq .Nav "import"}}on{{end}}" href="/admin/carmis/import">导入卡密</a>
+<p class="group">优惠管理</p>
+<a class="{{if eq .Nav "coupons"}}on{{end}}" href="/admin/coupons">优惠码</a>
+<p class="group">销售数据</p>
+<a class="{{if eq .Nav "orders"}}on{{end}}" href="/admin/orders">订单列表</a>
+<p class="group">配置</p>
+<a class="{{if eq .Nav "pays"}}on{{end}}" href="/admin/pays">支付通道</a>
+<a class="{{if eq .Nav "email"}}on{{end}}" href="/admin/emailtpls">邮件模板</a>
+<a class="{{if eq .Nav "settings"}}on{{end}}" href="/admin/settings">系统设置</a>
+</nav>
+<form method="post" action="/admin/logout"><button class="link" type="submit">退出登录</button></form>
+</aside>
+<div class="content">
+{{if .Ok}}<p class="banner ok">{{.Ok}}</p>{{end}}
+{{if .Err}}<p class="banner err">{{.Err}}</p>{{end}}
+{{else}}
+<div class="login-wrap">
+{{if .Err}}<p class="banner err">{{.Err}}</p>{{end}}
+{{end}}
+{{end}}
+
+{{define "foot"}}
+{{if .User}}</div></div>{{else}}</div>{{end}}
+<script>
+document.querySelectorAll("[data-copy]").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var text = btn.getAttribute("data-copy") || "";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+    } else {
+      var area = document.createElement("textarea");
+      area.value = text;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+    btn.textContent = "已复制";
+  });
+});
+</script>
+</body></html>
+{{end}}
+
+{{define "pager"}}
+<p class="pager">{{if .Prev}}<a href="{{.Prev}}">上一页</a>{{end}}{{if .Next}}<a href="{{.Next}}">下一页</a>{{end}}</p>
+{{end}}
+
+{{define "message"}}
+{{template "head" .}}
+<p><a href="{{.Back}}">返回</a></p>
+{{template "foot" .}}
+{{end}}
+
+{{define "login"}}
+{{template "head" .}}
+<div class="card">
+<h1>登录</h1>
+<form method="post" action="/admin/login">
+<div class="field"><label for="username">用户名</label><input id="username" name="username" autocomplete="username" required></div>
+<div class="field"><label for="password">密码</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
+<button class="primary" type="submit">登录</button>
+</form>
+</div>
+{{template "foot" .}}
+{{end}}

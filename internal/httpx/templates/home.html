@@ -1,0 +1,21 @@
+{{define "home.html"}}{{template "head" .}}
+<div class="card mb-4"><div class="card-body">
+  <h4>站点公告</h4>
+  <p class="lead mb-0">{{.Site.Notice}}</p>
+</div></div>
+<h3 class="text-center">今天需要一点什么？</h3>
+<p class="text-center text-secondary">自动发货，下单后即可查询</p>
+{{range .Groups}}
+<h5 class="mt-4">{{.Name}}</h5>
+<div class="row g-3">
+{{range .Goods}}
+<div class="col-6 col-md-3"><a class="text-reset text-decoration-none" href="/buy/{{.ID}}"><div class="card h-100"><div class="card-body">
+  <div class="small text-success">{{if eq .Type 1}}自动发货{{else}}人工处理{{end}}</div>
+  <div class="fw-semibold">{{.Name}}</div>
+  <div class="price">¥{{yuan .Actual}}</div>
+  <div class="small text-secondary">库存 {{.InStock}} · 销量 {{.Sales}}</div>
+</div></div></a></div>
+{{end}}
+</div>
+{{end}}
+{{template "foot" .}}{{end}}

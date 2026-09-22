@@ -1,0 +1,115 @@
+{{define "emailtpls"}}
+{{template "head" .}}
+<h1>邮件模板</h1>
+<form class="card" method="post" action="{{.Action}}">
+<h2>{{if .Form.ID}}编辑邮件模板{{else}}新增邮件模板{{end}}</h2>
+<div class="field"><label for="tpl_name">邮件标题</label><input id="tpl_name" name="tpl_name" value="{{.Form.Name}}" required maxlength="150"></div>
+<div class="field"><label for="tpl_token">邮件标识</label>
+<input id="tpl_token" name="tpl_token" value="{{.Form.Token}}" {{if .Form.ID}}readonly{{else}}required{{end}} maxlength="50">
+<p class="help">常用标识：card_send_user_email、manual_send_manage_mail、pending_order、completed_order、failed_order。标识保存后不可修改。</p>
+</div>
+<div class="field"><label for="tpl_content">邮件内容</label>
+<textarea id="tpl_content" name="tpl_content" required>{{.Form.Content}}</textarea>
+<p class="help">占位符：{webname}、{weburl}、{ord_title}、{ord_info}、{order_id}、{buy_amount}、{ord_price}、{created_at}、{product_name}</p>
+</div>
+<button class="primary" type="submit">提交</button>
+{{if .Form.ID}}<a href="/admin/emailtpls">取消</a>{{end}}
+</form>
+<div class="card table-wrap">
+<table>
+<thead><tr><th>ID</th><th>邮件标题</th><th>邮件标识</th><th></th></tr></thead>
+<tbody>
+{{range .Rows}}
+<tr>
+<td>{{.ID}}</td><td>{{.Name}}</td><td><code>{{.Token}}</code></td>
+<td><a href="/admin/emailtpls/{{.ID}}/edit">编辑</a></td>
+</tr>
+{{else}}<tr><td colspan="4">没有邮件模板</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+{{template "foot" .}}
+{{end}}
+
+{{define "settings"}}
+{{template "head" .}}
+<h1>系统设置</h1>
+<form method="post" action="/admin/settings">
+{{range .Tabs}}
+<section class="card">
+<h2>{{.Name}}</h2>
+{{range .Fields}}
+{{$f := .}}
+<div class="field">
+<label for="set-{{$f.Key}}">{{$f.Label}}</label>
+{{if eq $f.Kind "textarea"}}
+<textarea id="set-{{$f.Key}}" name="{{$f.Key}}" rows="5">{{$f.Value}}</textarea>
+{{else if eq $f.Kind "switch"}}
+<select id="set-{{$f.Key}}" name="{{$f.Key}}">
+<option value="0" {{if ne $f.Value "1"}}selected{{end}}>关闭</option>
+<option value="1" {{if eq $f.Value "1"}}selected{{end}}>开启</option>
+</select>
+{{else if eq $f.Kind "select"}}
+<select id="set-{{$f.Key}}" name="{{$f.Key}}">
+{{range $f.Options}}<option value="{{.Value}}" {{if eq .Value $f.Value}}selected{{end}}>{{.Label}}</option>{{end}}
+</select>
+{{else if eq $f.Kind "password"}}
+<input id="set-{{$f.Key}}" type="password" name="{{$f.Key}}" autocomplete="new-password">
+{{else}}
+<input id="set-{{$f.Key}}" name="{{$f.Key}}" value="{{$f.Value}}">
+{{end}}
+{{if $f.Help}}<p class="help">{{$f.Help}}</p>{{end}}
+</div>
+{{end}}
+</section>
+{{end}}
+<p class="help">修改部分配置需要重启进程才会生效，例如邮件服务、server酱等。</p>
+<button class="primary" type="submit">提交</button>
+</form>
+{{template "foot" .}}
+{{end}}
+
+{{define "dashboard"}}
+{{template "head" .}}
+<h1>仪表盘</h1>
+<p class="help">每个梦想的路上，一起前行....！</p>
+<div class="stats">
+<div class="card stat"><span>销售额</span><b>{{.Sales}}</b></div>
+<div class="card stat"><span>近7天销售额</span><b>{{.Week}}</b></div>
+<div class="card stat"><span>成功订单</span><b>{{.Success}}</b></div>
+<div class="card stat"><span>支付占比</span><b>{{.Ratio}}</b></div>
+<div class="card stat"><span>支付成功数</span><b>{{.Paid}}</b></div>
+<div class="card stat"><span>未支付数</span><b>{{.Wait}}</b></div>
+<div class="card stat"><span>总订单数</span><b>{{.Total}}</b></div>
+<div class="card stat"><span>待处理订单数</span><b>{{.Pending}}</b></div>
+<div class="card stat"><span>处理中订单数</span><b>{{.Processing}}</b></div>
+<div class="card stat"><span>处理失败订单数</span><b>{{.Failure}}</b></div>
+<div class="card stat"><span>异常订单数</span><b>{{.Abnormal}}</b></div>
+<div class="card stat"><span>过期订单数</span><b>{{.Expired}}</b></div>
+</div>
+<div class="card">
+<h2>支付占比</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>支付通道</th><th>支付成功数</th><th>占比</th></tr></thead>
+<tbody>
+{{range .Channels}}<tr><td>{{.Name}}</td><td>{{.Count}}</td><td>{{.Ratio}}</td></tr>
+{{else}}<tr><td colspan="3">还没有支付成功的订单</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+</div>
+<div class="card">
+<h2>受欢迎的商品</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>商品名称</th><th>销量</th><th>实际售价</th></tr></thead>
+<tbody>
+{{range .Popular}}<tr><td>{{.Name}}</td><td>{{.Sales}}</td><td>{{.Price}}</td></tr>
+{{else}}<tr><td colspan="3">还没有商品</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+</div>
+{{template "foot" .}}
+{{end}}

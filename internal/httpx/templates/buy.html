@@ -1,0 +1,27 @@
+{{define "buy.html"}}{{template "head" .}}
+<div class="row"><div class="col-lg-7"><div class="card"><div class="card-body">
+  <h3>{{.Good.Name}}</h3>
+  <p>{{.Good.Desc}}</p>
+  <div class="price fs-3">¥{{yuan .Good.Actual}}</div>
+  <p class="text-secondary">库存 {{.Good.InStock}}{{if .Good.Prompt}} · {{.Good.Prompt}}{{end}}</p>
+  <div>{{.Good.Description}}</div>
+</div></div></div>
+<div class="col-lg-5"><div class="card"><div class="card-body">
+<form method="post" action="/create-order">
+  <input type="hidden" name="gid" value="{{.Good.ID}}">
+  <label class="form-label">邮箱</label>
+  <input class="form-control mb-2" name="email" required>
+  <label class="form-label">查询密码</label>
+  <input class="form-control mb-2" name="search_pwd">
+  <label class="form-label">数量</label>
+  <input class="form-control mb-2" name="by_amount" value="1" required>
+  <label class="form-label">优惠码</label>
+  <input class="form-control mb-2" name="coupon_code">
+  <label class="form-label">支付方式</label>
+  <select class="form-select mb-3" name="payway" required>
+    {{range .Pays}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+  </select>
+  <button class="btn btn-dark w-100">提交订单</button>
+</form>
+</div></div></div></div>
+{{template "foot" .}}{{end}}

@@ -1,0 +1,143 @@
+{{define "groups"}}
+{{template "head" .}}
+<h1>商品分类</h1>
+<p>{{if .Trashed}}<a href="/admin/groups">返回列表</a>{{else}}<a href="/admin/groups?trashed=1">回收站</a>{{end}}</p>
+<form class="card" method="post" action="{{.Action}}">
+<h2>{{if .Form.ID}}编辑分类{{else}}新增分类{{end}}</h2>
+<div class="field"><label for="gp_name">分类名称</label><input id="gp_name" name="gp_name" value="{{.Form.Name}}" required maxlength="200"></div>
+<div class="field"><label for="is_open">是否启用</label>
+<select id="is_open" name="is_open">
+<option value="1" {{if eq .Form.Open 1}}selected{{end}}>启用</option>
+<option value="0" {{if eq .Form.Open 0}}selected{{end}}>禁用</option>
+</select>
+</div>
+<div class="field"><label for="ord">排序权重 越大越靠前</label><input id="ord" name="ord" value="{{.Form.Ord}}"><p class="help">数值越大，排名越靠前</p></div>
+<button class="primary" type="submit">提交</button>
+{{if .Form.ID}}<a href="/admin/groups">取消</a>{{end}}
+</form>
+<div class="card table-wrap">
+<table>
+<thead><tr><th>ID</th><th>分类名称</th><th>是否启用</th><th>排序权重</th><th>创建时间</th><th></th></tr></thead>
+<tbody>
+{{range .Rows}}
+<tr>
+<td>{{.ID}}</td><td>{{.Name}}</td><td>{{openName .Open}}</td><td>{{.Ord}}</td><td>{{.Created}}</td>
+<td class="row-actions">
+{{if .Trashed}}
+<form method="post" action="/admin/groups/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><button type="submit">恢复</button></form>
+{{else}}
+<a href="/admin/groups/{{.ID}}/edit">编辑</a>
+<form method="post" action="/admin/groups/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><button type="submit">删除</button></form>
+{{end}}
+</td>
+</tr>
+{{else}}<tr><td colspan="6">没有分类</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+{{template "foot" .}}
+{{end}}
+
+{{define "carmis_list"}}
+{{template "head" .}}
+<h1>卡密列表</h1>
+<p>
+<a class="btn-ghost" href="/admin/carmis/import">导入卡密</a>
+{{if .Trashed}}<a href="/admin/carmis">返回列表</a>{{else}}<a href="/admin/carmis?trashed=1">回收站</a>{{end}}
+</p>
+<form class="filters" method="get" action="/admin/carmis">
+{{if .Trashed}}<input type="hidden" name="trashed" value="1">{{end}}
+<label>所属商品
+<select name="goods_id">
+<option value="">全部</option>
+{{range .Goods}}<option value="{{.ID}}" {{if eq $.GoodsID (printf "%d" .ID)}}selected{{end}}>{{.Name}}</option>{{end}}
+</select>
+</label>
+<label>状态
+<select name="status">
+<option value="">全部</option>
+<option value="1" {{if eq .Status "1"}}selected{{end}}>未售出</option>
+<option value="2" {{if eq .Status "2"}}selected{{end}}>已售出</option>
+</select>
+</label>
+<button class="primary" type="submit">搜索</button>
+</form>
+<div class="card table-wrap">
+<table>
+<thead><tr><th>ID</th><th>所属商品</th><th>状态</th><th>循环卡密</th><th>卡密内容</th><th>创建时间</th><th></th></tr></thead>
+<tbody>
+{{range .Rows}}
+<tr>
+<td>{{.ID}}</td><td>{{.GoodsName}}</td><td>{{carmiStatus .Status}}</td><td>{{if eq .Loop 1}}是{{end}}</td>
+<td class="wrap">{{short .Text 40}}</td><td>{{.Created}}</td>
+<td class="row-actions">
+{{if .Trashed}}
+<form method="post" action="/admin/carmis/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><button type="submit">恢复</button></form>
+{{else}}
+<a href="/admin/carmis/{{.ID}}/edit">编辑</a>
+<form method="post" action="/admin/carmis/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><button type="submit">删除</button></form>
+{{end}}
+</td>
+</tr>
+{{else}}<tr><td colspan="7">没有卡密</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+{{template "pager" .}}
+{{template "foot" .}}
+{{end}}
+
+{{define "carmis_import"}}
+{{template "head" .}}
+<h1>导入卡密</h1>
+<p><a href="/admin/carmis">卡密列表</a></p>
+<form class="card" method="post" action="/admin/carmis/import" onsubmit="return confirm('确定要导入卡密吗？')">
+<div class="field"><label for="goods_id">所属商品</label>
+<select id="goods_id" name="goods_id" required>
+<option value="">请选择自动发货商品</option>
+{{range .Goods}}<option value="{{.ID}}" {{if eq .ID $.GoodsID}}selected{{end}}>{{.Name}}</option>{{end}}
+</select>
+</div>
+<div class="field"><label for="carmis_list">卡密文本</label>
+<textarea id="carmis_list" name="carmis_list" rows="16">{{.Text}}</textarea>
+<p class="help">一行一个，回车分隔。请勿导入单个文本长度过大的卡密，容易导致内存溢出。如果卡密过大建议修改商品为人工处理</p>
+</div>
+<div class="field"><label for="is_loop">循环卡密</label>
+<select id="is_loop" name="is_loop">
+<option value="0" {{if ne .Loop 1}}selected{{end}}>否</option>
+<option value="1" {{if eq .Loop 1}}selected{{end}}>是</option>
+</select>
+</div>
+<div class="field"><label><input type="checkbox" name="remove_duplication" value="1" {{if .Dedupe}}checked{{end}}> 是否去重</label></div>
+<button class="primary" type="submit">导入卡密</button>
+</form>
+{{template "foot" .}}
+{{end}}
+
+{{define "carmi_form"}}
+{{template "head" .}}
+<h1>编辑卡密</h1>
+<p><a href="/admin/carmis">返回列表</a></p>
+<form class="card" method="post" action="{{.Action}}">
+<div class="field"><label for="goods_id">所属商品</label>
+<select id="goods_id" name="goods_id">
+{{range .Goods}}<option value="{{.ID}}" {{if eq .ID $.GoodsID}}selected{{end}}>{{.Name}}</option>{{end}}
+</select>
+</div>
+<div class="field"><label for="status">状态</label>
+<select id="status" name="status">
+<option value="1" {{if eq .Status 1}}selected{{end}}>未售出</option>
+<option value="2" {{if eq .Status 2}}selected{{end}}>已售出</option>
+</select>
+</div>
+<div class="field"><label for="is_loop">循环卡密</label>
+<select id="is_loop" name="is_loop">
+<option value="0" {{if ne .Loop 1}}selected{{end}}>否</option>
+<option value="1" {{if eq .Loop 1}}selected{{end}}>是</option>
+</select>
+</div>
+<div class="field"><label for="carmi">卡密内容</label><textarea id="carmi" name="carmi" required>{{.Text}}</textarea></div>
+<button class="primary" type="submit">提交</button>
+</form>
+{{template "foot" .}}
+{{end}}

@@ -1,0 +1,198 @@
+{{define "coupons"}}
+{{template "head" .}}
+<h1>优惠码</h1>
+<p>{{if .Trashed}}<a href="/admin/coupons">返回列表</a>{{else}}<a href="/admin/coupons?trashed=1">回收站</a>{{end}}</p>
+<form class="card" method="post" action="{{.Action}}">
+<h2>{{if .Form.ID}}编辑优惠码{{else}}新增优惠码{{end}}</h2>
+<div class="field"><label for="coupon">优惠码</label><input id="coupon" name="coupon" value="{{.Form.Code}}" required maxlength="150"></div>
+<div class="field"><label for="discount">优惠金额</label><input id="discount" name="discount" value="{{.Form.Discount}}" required></div>
+<div class="field"><label for="ret">剩余使用次数</label><input id="ret" name="ret" value="{{.Form.Ret}}" required></div>
+<div class="field"><label for="is_use">是否已经使用</label>
+<select id="is_use" name="is_use">
+<option value="1" {{if eq .Form.Use 1}}selected{{end}}>未使用</option>
+<option value="2" {{if eq .Form.Use 2}}selected{{end}}>已使用</option>
+</select>
+</div>
+<div class="field"><label for="is_open">是否启用</label>
+<select id="is_open" name="is_open">
+<option value="1" {{if eq .Form.Open 1}}selected{{end}}>启用</option>
+<option value="0" {{if eq .Form.Open 0}}selected{{end}}>禁用</option>
+</select>
+</div>
+<div class="field"><span>可用商品</span>
+<div class="checks">
+{{range .Goods}}
+<label><input type="checkbox" name="goods_id" value="{{.ID}}" {{if index $.Selected .ID}}checked{{end}}> {{.Name}}</label>
+{{else}}<p class="help">还没有商品</p>{{end}}
+</div>
+<p class="help">未关联商品时，顾客无法使用该优惠码。</p>
+</div>
+<button class="primary" type="submit">提交</button>
+{{if .Form.ID}}<a href="/admin/coupons">取消</a>{{end}}
+</form>
+<div class="card table-wrap">
+<table>
+<thead><tr><th>ID</th><th>优惠码</th><th>优惠金额</th><th>剩余使用次数</th><th>是否已经使用</th><th>是否启用</th><th>可用商品</th><th>创建时间</th><th></th></tr></thead>
+<tbody>
+{{range .Rows}}
+<tr>
+<td>{{.ID}}</td><td>{{.Code}}</td><td>{{.Discount}}</td><td>{{.Ret}}</td>
+<td>{{if eq .Use 2}}已使用{{else}}未使用{{end}}</td>
+<td>{{openName .Open}}</td><td class="wrap">{{.Goods}}</td><td>{{.Created}}</td>
+<td class="row-actions">
+{{if .Trashed}}
+<form method="post" action="/admin/coupons/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><button type="submit">恢复</button></form>
+{{else}}
+<a href="/admin/coupons/{{.ID}}/edit">编辑</a>
+<form method="post" action="/admin/coupons/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><button type="submit">删除</button></form>
+{{end}}
+</td>
+</tr>
+{{else}}<tr><td colspan="9">没有优惠码</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+{{template "foot" .}}
+{{end}}
+
+{{define "orders"}}
+{{template "head" .}}
+<h1>订单列表</h1>
+<form class="filters" method="get" action="/admin/orders">
+<label>订单号<input name="order_sn" value="{{.SN}}"></label>
+<label>订单名称<input name="title" value="{{.Title}}"></label>
+<label>下单邮箱<input name="email" value="{{.Email}}"></label>
+<label>第三方支付订单号<input name="trade_no" value="{{.Trade}}"></label>
+<label>订单状态
+<select name="status">
+<option value="">全部</option>
+<option value="1" {{if eq .Status "1"}}selected{{end}}>待支付</option>
+<option value="2" {{if eq .Status "2"}}selected{{end}}>待处理</option>
+<option value="3" {{if eq .Status "3"}}selected{{end}}>处理中</option>
+<option value="4" {{if eq .Status "4"}}selected{{end}}>已完成</option>
+<option value="5" {{if eq .Status "5"}}selected{{end}}>处理失败</option>
+<option value="6" {{if eq .Status "6"}}selected{{end}}>异常</option>
+<option value="-1" {{if eq .Status "-1"}}selected{{end}}>过期</option>
+</select>
+</label>
+<button class="primary" type="submit">搜索</button>
+</form>
+<div class="card table-wrap">
+<table>
+<thead><tr>
+<th>订单号</th><th>订单名称</th><th>下单邮箱</th><th>购买数量</th><th>实际支付价格</th><th>订单状态</th><th>查询密码</th><th>支付通道</th><th>第三方支付订单号</th><th>订单创建时间</th><th></th>
+</tr></thead>
+<tbody>
+{{range .Rows}}
+<tr>
+<td><code>{{.SN}}</code> <button type="button" data-copy="{{.SN}}">复制</button></td>
+<td class="wrap">{{.Title}}</td>
+<td>{{.Email}}</td>
+<td>{{.Amount}}</td>
+<td>{{.Actual}}</td>
+<td>{{orderStatus .Status}}</td>
+<td>{{if .Pwd}}<code>{{.Pwd}}</code> <button type="button" data-copy="{{.Pwd}}">复制</button>{{else}}无{{end}}</td>
+<td>{{.Pay}}</td>
+<td>{{if .Trade}}<code>{{.Trade}}</code> <button type="button" data-copy="{{.Trade}}">复制</button>{{end}}</td>
+<td>{{.Created}}</td>
+<td><a href="/admin/orders/{{.ID}}">详情</a></td>
+</tr>
+{{else}}<tr><td colspan="11">没有订单</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+{{template "pager" .}}
+{{template "foot" .}}
+{{end}}
+
+{{define "order_detail"}}
+{{template "head" .}}
+<h1>订单详情</h1>
+<p><a href="/admin/orders">返回列表</a></p>
+<form class="card" method="post" action="{{.Action}}">
+<div class="field"><label>订单号</label><p><code>{{.Row.SN}}</code> <button type="button" data-copy="{{.Row.SN}}">复制</button></p></div>
+<div class="field"><label for="title">订单名称</label><input id="title" name="title" value="{{.Row.Title}}"></div>
+<div class="field"><label>下单邮箱</label><p>{{.Row.Email}}</p></div>
+<div class="field"><label>商品单价</label><p>{{.Row.GoodsPrice}}</p></div>
+<div class="field"><label>购买数量</label><p>{{.Row.Amount}}</p></div>
+<div class="field"><label>优惠码优惠价格</label><p>{{.Row.CouponOff}}</p></div>
+<div class="field"><label>批发价优惠</label><p>{{.Row.WholesaleOff}}</p></div>
+<div class="field"><label>订单总价</label><p>{{.Row.Total}}</p></div>
+<div class="field"><label>实际支付价格</label><p>{{.Row.Actual}}</p></div>
+<div class="field"><label>购买者下单IP地址</label><p>{{.Row.IP}}</p></div>
+<div class="field"><label>支付通道</label><p>{{.Row.Pay}}</p></div>
+<div class="field"><label>第三方支付订单号</label><p>{{if .Row.Trade}}<code>{{.Row.Trade}}</code> <button type="button" data-copy="{{.Row.Trade}}">复制</button>{{else}}无{{end}}</p></div>
+<div class="field"><label>订单类型</label><p>{{goodsType .Row.Type}}</p></div>
+<div class="field"><label for="info">订单详情</label><textarea id="info" name="info">{{.Row.Info}}</textarea></div>
+<div class="field"><label for="search_pwd">查询密码</label>
+<input id="search_pwd" name="search_pwd" value="{{.Row.Pwd}}">
+{{if .Row.Pwd}}<button type="button" data-copy="{{.Row.Pwd}}">复制</button>{{end}}
+</div>
+<div class="field"><label for="status">订单状态</label>
+<select id="status" name="status">
+<option value="1" {{if eq .Row.Status 1}}selected{{end}}>待支付</option>
+<option value="2" {{if eq .Row.Status 2}}selected{{end}}>待处理</option>
+<option value="3" {{if eq .Row.Status 3}}selected{{end}}>处理中</option>
+<option value="4" {{if eq .Row.Status 4}}selected{{end}}>已完成</option>
+<option value="5" {{if eq .Row.Status 5}}selected{{end}}>处理失败</option>
+<option value="6" {{if eq .Row.Status 6}}selected{{end}}>异常</option>
+<option value="-1" {{if eq .Row.Status -1}}selected{{end}}>过期</option>
+</select>
+</div>
+<p class="help">创建时间 {{.Row.Created}}</p>
+<button class="primary" type="submit">提交</button>
+</form>
+{{template "foot" .}}
+{{end}}
+
+{{define "pays"}}
+{{template "head" .}}
+<h1>支付通道</h1>
+<form class="card" method="post" action="{{.Action}}">
+<h2>{{if .Form.ID}}编辑支付通道{{else}}新增支付通道{{end}}</h2>
+<div class="field"><label for="pay_name">支付名称</label><input id="pay_name" name="pay_name" value="{{.Form.Name}}" required maxlength="200"></div>
+<div class="field"><label for="pay_check">支付标识</label><input id="pay_check" name="pay_check" value="{{.Form.Check}}" required maxlength="50"></div>
+<div class="field"><label>支付方式</label>
+<div class="radios">
+<label><input type="radio" name="pay_method" value="1" {{if eq .Form.Method 1}}checked{{end}}> 跳转</label>
+<label><input type="radio" name="pay_method" value="2" {{if eq .Form.Method 2}}checked{{end}}> 扫码</label>
+</div>
+</div>
+<div class="field"><label>支付场景</label>
+<div class="radios">
+<label><input type="radio" name="pay_client" value="1" {{if eq .Form.Client 1}}checked{{end}}> 电脑PC</label>
+<label><input type="radio" name="pay_client" value="2" {{if eq .Form.Client 2}}checked{{end}}> 手机</label>
+<label><input type="radio" name="pay_client" value="3" {{if eq .Form.Client 3}}checked{{end}}> 通用</label>
+</div>
+</div>
+<div class="field"><label for="merchant_id">商户 ID</label><input id="merchant_id" name="merchant_id" value="{{.Form.MerchantID}}" required maxlength="200"></div>
+<div class="field"><label for="merchant_key">商户 KEY</label><textarea id="merchant_key" name="merchant_key">{{.Form.Key}}</textarea></div>
+<div class="field"><label for="merchant_pem">商户密钥</label><textarea id="merchant_pem" name="merchant_pem" required>{{.Form.Pem}}</textarea></div>
+<div class="field"><label for="pay_handleroute">支付处理路由</label><input id="pay_handleroute" name="pay_handleroute" value="{{.Form.Route}}" required maxlength="200"></div>
+<div class="field"><label for="is_open">是否启用</label>
+<select id="is_open" name="is_open">
+<option value="1" {{if eq .Form.Open 1}}selected{{end}}>启用</option>
+<option value="0" {{if eq .Form.Open 0}}selected{{end}}>禁用</option>
+</select>
+</div>
+<button class="primary" type="submit">提交</button>
+{{if .Form.ID}}<a href="/admin/pays">取消</a>{{end}}
+</form>
+<div class="card table-wrap">
+<table>
+<thead><tr>
+<th>ID</th><th>支付名称</th><th>支付标识</th><th>支付方式</th><th>支付场景</th><th>商户 ID</th><th>商户 KEY</th><th>商户密钥</th><th>支付处理路由</th><th>是否启用</th><th></th>
+</tr></thead>
+<tbody>
+{{range .Rows}}
+<tr>
+<td>{{.ID}}</td><td>{{.Name}}</td><td>{{.Check}}</td><td>{{payMethod .Method}}</td><td>{{payClient .Client}}</td>
+<td>{{short .MerchantID 20}}</td><td>{{short .Key 20}}</td><td>{{short .Pem 20}}</td><td>{{.Route}}</td><td>{{openName .Open}}</td>
+<td><a href="/admin/pays/{{.ID}}/edit">编辑</a></td>
+</tr>
+{{else}}<tr><td colspan="11">没有支付通道</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+{{template "foot" .}}
+{{end}}

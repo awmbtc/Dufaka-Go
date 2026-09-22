@@ -1,0 +1,8 @@
+{{define "qrpay.html"}}{{template "head" .}}
+<div class="card"><div class="card-body text-center">
+  <h3>扫码支付</h3>
+  <p>{{.Pay.Name}} · 订单 {{.Order.SN}} · ¥{{yuan .Order.Actual}}</p>
+  <img alt="支付二维码" src="data:image/png;base64,{{.QR}}">
+  <p class="mt-3 text-secondary">请使用微信扫一扫。支付完成后可在订单查询里查看。</p>
+</div></div>
+{{template "foot" .}}{{end}}
