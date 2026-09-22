@@ -81,7 +81,7 @@ func (s *Server) goodsList(w http.ResponseWriter, r *http.Request, u session) {
 		LEFT JOIN goods_group gg ON gg.id=g.group_id
 		WHERE ` + strings.Join(where, " AND ") +
 		` ORDER BY g.id DESC LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
-	rows, err := s.pool.Query(r.Context(), q, args...)
+	rows, err := s.db().Query(r.Context(), q, args...)
 	if err != nil {
 		s.fail(w, u, "goods", dbErr(err))
 		return
@@ -179,7 +179,7 @@ func (s *Server) goodsForm(w http.ResponseWriter, r *http.Request, u session, f 
 
 func (s *Server) loadGood(r *http.Request, id int) (goodForm, error) {
 	var f goodForm
-	err := s.pool.QueryRow(r.Context(), `
+	err := s.db().QueryRow(r.Context(), `
 		SELECT id, group_id, gd_name, gd_description, gd_keywords, COALESCE(picture,''),
 			COALESCE(retail_price,0)::text, actual_price::text, in_stock, COALESCE(sales_volume,0),
 			COALESCE(ord,1), buy_limit_num, COALESCE(buy_prompt,''), COALESCE(description,''), type,
@@ -206,7 +206,7 @@ func (s *Server) goodsSave(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	var n int
-	err = s.pool.QueryRow(r.Context(), `SELECT count(*) FROM goods_group WHERE id=$1 AND deleted_at IS NULL`, f.GroupID).Scan(&n)
+	err = s.db().QueryRow(r.Context(), `SELECT count(*) FROM goods_group WHERE id=$1 AND deleted_at IS NULL`, f.GroupID).Scan(&n)
 	if err != nil {
 		s.goodsForm(w, r, u, f, dbErr(err), http.StatusBadRequest)
 		return
@@ -216,7 +216,7 @@ func (s *Server) goodsSave(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	if id == 0 {
-		_, err = s.pool.Exec(r.Context(), `
+		_, err = s.db().Exec(r.Context(), `
 			INSERT INTO goods (group_id, gd_name, gd_description, gd_keywords, picture,
 				retail_price, actual_price, in_stock, sales_volume, ord, buy_limit_num,
 				buy_prompt, description, type, wholesale_price_cnf, other_ipu_cnf, api_hook,
@@ -246,7 +246,7 @@ func (s *Server) goodsSave(w http.ResponseWriter, r *http.Request, u session) {
 }
 
 func execCount(s *Server, r *http.Request, sql string, args ...any) (int64, error) {
-	tag, err := s.pool.Exec(r.Context(), sql, args...)
+	tag, err := s.db().Exec(r.Context(), sql, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -343,7 +343,7 @@ func (s *Server) groupEdit(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	var g groupRow
-	err := s.pool.QueryRow(r.Context(), `
+	err := s.db().QueryRow(r.Context(), `
 		SELECT id, gp_name, is_open, ord, to_char(COALESCE(created_at, now()), 'YYYY-MM-DD HH24:MI')
 		FROM goods_group WHERE id=$1 AND deleted_at IS NULL`, id).Scan(&g.ID, &g.Name, &g.Open, &g.Ord, &g.Created)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -365,7 +365,7 @@ func (s *Server) renderGroups(w http.ResponseWriter, r *http.Request, u session,
 	if trashed(r) {
 		where = "deleted_at IS NOT NULL"
 	}
-	rows, err := s.pool.Query(r.Context(), `
+	rows, err := s.db().Query(r.Context(), `
 		SELECT id, gp_name, is_open, ord, to_char(COALESCE(created_at, now()), 'YYYY-MM-DD HH24:MI'), deleted_at IS NOT NULL
 		FROM goods_group WHERE `+where+` ORDER BY id DESC LIMIT 200`)
 	if err != nil {
@@ -435,7 +435,7 @@ func (s *Server) groupSave(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	if id == 0 {
-		_, err = s.pool.Exec(r.Context(), `INSERT INTO goods_group (gp_name, is_open, ord, created_at, updated_at) VALUES ($1,$2,$3,now(),now())`, g.Name, g.Open, g.Ord)
+		_, err = s.db().Exec(r.Context(), `INSERT INTO goods_group (gp_name, is_open, ord, created_at, updated_at) VALUES ($1,$2,$3,now(),now())`, g.Name, g.Open, g.Ord)
 	} else {
 		var n int64
 		n, err = execCount(s, r, `UPDATE goods_group SET gp_name=$1, is_open=$2, ord=$3, updated_at=now() WHERE id=$4 AND deleted_at IS NULL`, g.Name, g.Open, g.Ord, id)
@@ -529,7 +529,7 @@ func (s *Server) carmisList(w http.ResponseWriter, r *http.Request, u session) {
 		FROM carmis c LEFT JOIN goods g ON g.id=c.goods_id
 		WHERE ` + strings.Join(where, " AND ") +
 		` ORDER BY c.id DESC LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
-	rows, err := s.pool.Query(r.Context(), q, args...)
+	rows, err := s.db().Query(r.Context(), q, args...)
 	if err != nil {
 		s.fail(w, u, "carmis", dbErr(err))
 		return
@@ -600,7 +600,7 @@ func (s *Server) carmisImport(w http.ResponseWriter, r *http.Request, u session)
 		return
 	}
 	var goodsID int
-	err = s.pool.QueryRow(r.Context(), `SELECT id FROM goods WHERE id=$1 AND type=1 AND deleted_at IS NULL`, form.GoodsID).Scan(&goodsID)
+	err = s.db().QueryRow(r.Context(), `SELECT id FROM goods WHERE id=$1 AND type=1 AND deleted_at IS NULL`, form.GoodsID).Scan(&goodsID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		s.renderImport(w, r, u, form, "请选择自动发货商品", http.StatusBadRequest)
 		return
@@ -609,7 +609,7 @@ func (s *Server) carmisImport(w http.ResponseWriter, r *http.Request, u session)
 		s.renderImport(w, r, u, form, dbErr(err), http.StatusBadRequest)
 		return
 	}
-	tx, err := s.pool.Begin(r.Context())
+	tx, err := s.db().Begin(r.Context())
 	if err != nil {
 		s.renderImport(w, r, u, form, dbErr(err), http.StatusBadRequest)
 		return
@@ -638,7 +638,7 @@ func (s *Server) carmiEdit(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	p := carmiFormPage{Action: "/admin/carmis/" + strconv.Itoa(id), ID: id}
-	err := s.pool.QueryRow(r.Context(), `SELECT goods_id, status, is_loop, carmi FROM carmis WHERE id=$1 AND deleted_at IS NULL`, id).Scan(&p.GoodsID, &p.Status, &p.Loop, &p.Text)
+	err := s.db().QueryRow(r.Context(), `SELECT goods_id, status, is_loop, carmi FROM carmis WHERE id=$1 AND deleted_at IS NULL`, id).Scan(&p.GoodsID, &p.Status, &p.Loop, &p.Text)
 	if errors.Is(err, pgx.ErrNoRows) {
 		s.fail(w, u, "carmis", "记录不存在")
 		return
@@ -694,7 +694,7 @@ func (s *Server) carmiSave(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	var goodsID int
-	err := s.pool.QueryRow(r.Context(), `SELECT id FROM goods WHERE id=$1 AND type=1 AND deleted_at IS NULL`, p.GoodsID).Scan(&goodsID)
+	err := s.db().QueryRow(r.Context(), `SELECT id FROM goods WHERE id=$1 AND type=1 AND deleted_at IS NULL`, p.GoodsID).Scan(&goodsID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		s.renderCarmi(w, r, u, p, "请选择自动发货商品", http.StatusBadRequest)
 		return

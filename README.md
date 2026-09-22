@@ -4,18 +4,19 @@
 
 使用、修改或再分发本软件，必须保留仓库根目录的 MIT 许可声明。详见 [LICENSE](LICENSE)。
 
-## 运行
+## 手工安装
+
+先准备好 PostgreSQL。不需要 Redis，也不需要自己导入 SQL。
 
 ```bash
-psql "$DUFAKA_DATABASE_URL" -f sql/001_schema.sql
-export DUFAKA_DATABASE_URL=postgres://user:pass@127.0.0.1:5432/dufaka?sslmode=disable
-export DUFAKA_SESSION_KEY="$(openssl rand -hex 32)"
-export DUFAKA_BASE_URL=https://shop.example.com
 export DUFAKA_ADDR=127.0.0.1:8080
+export DUFAKA_BASE_URL=http://127.0.0.1:8080
 go run ./cmd/dufaka
 ```
 
-打开 `/install` 创建管理员。后台在 `/admin`。
+浏览器打开 http://127.0.0.1:8080/install 。页面上有四步：启动、连接数据库、建表、管理员。可以先点「测试连接」，再点「开始安装」。安装会创建数据库（账号有权限时）、数据表、管理员、微信扫码渠道和五封邮件模板，并把连接写入 `dufaka.json`。完成后页面给出前台和后台入口。
+
+已经用环境变量提供 `DUFAKA_DATABASE_URL` 时，重启也会读取 `dufaka.json` 里的会话密钥。
 
 微信支付扫码使用 APIv3。进程需要这些环境变量：`WECHAT_PAY_APP_ID`、`WECHAT_PAY_MCH_ID`、`WECHAT_PAY_CERT_SERIAL_NO`、`WECHAT_PAY_API_V3_KEY`、`WECHAT_PAY_PRIVATE_KEY`、`WECHAT_PAY_PUBLIC_KEY_ID`、`WECHAT_PAY_PLATFORM_KEY`。支付通知会先校验平台公钥签名，再解密。不要把密钥写进仓库。
 

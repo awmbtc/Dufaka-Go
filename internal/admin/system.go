@@ -35,7 +35,7 @@ func (s *Server) mailEdit(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	var f mailForm
-	err := s.pool.QueryRow(r.Context(), `SELECT id, tpl_name, tpl_token, tpl_content FROM emailtpls WHERE id=$1 AND deleted_at IS NULL`, id).Scan(&f.ID, &f.Name, &f.Token, &f.Content)
+	err := s.db().QueryRow(r.Context(), `SELECT id, tpl_name, tpl_token, tpl_content FROM emailtpls WHERE id=$1 AND deleted_at IS NULL`, id).Scan(&f.ID, &f.Name, &f.Token, &f.Content)
 	if errors.Is(err, pgx.ErrNoRows) {
 		s.fail(w, u, "email", "记录不存在")
 		return
@@ -51,7 +51,7 @@ func (s *Server) renderMail(w http.ResponseWriter, r *http.Request, u session, f
 	if !s.ready(w, u) {
 		return
 	}
-	rows, err := s.pool.Query(r.Context(), `SELECT id, tpl_name, tpl_token, tpl_content FROM emailtpls WHERE deleted_at IS NULL ORDER BY id`)
+	rows, err := s.db().Query(r.Context(), `SELECT id, tpl_name, tpl_token, tpl_content FROM emailtpls WHERE deleted_at IS NULL ORDER BY id`)
 	if err != nil {
 		s.fail(w, u, "email", dbErr(err))
 		return
@@ -121,7 +121,7 @@ func (s *Server) mailSave(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	if id == 0 {
-		_, err = s.pool.Exec(r.Context(), `INSERT INTO emailtpls (tpl_name, tpl_content, tpl_token, created_at, updated_at) VALUES ($1,$2,$3,now(),now())`, f.Name, f.Content, f.Token)
+		_, err = s.db().Exec(r.Context(), `INSERT INTO emailtpls (tpl_name, tpl_content, tpl_token, created_at, updated_at) VALUES ($1,$2,$3,now(),now())`, f.Name, f.Content, f.Token)
 	} else {
 		var n int64
 		n, err = execCount(s, r, `UPDATE emailtpls SET tpl_name=$1, tpl_content=$2, updated_at=now() WHERE id=$3 AND deleted_at IS NULL`, f.Name, f.Content, id)
@@ -228,7 +228,7 @@ func settingTabs(m map[string]string) []settingTab {
 }
 
 func (s *Server) loadSettings(r *http.Request) (map[string]string, error) {
-	rows, err := s.pool.Query(r.Context(), `SELECT key, value FROM settings`)
+	rows, err := s.db().Query(r.Context(), `SELECT key, value FROM settings`)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +336,7 @@ func (s *Server) settingsSave(w http.ResponseWriter, r *http.Request, u session)
 		s.renderSettings(w, r, u, vals, err.Error(), http.StatusBadRequest)
 		return
 	}
-	tx, err := s.pool.Begin(r.Context())
+	tx, err := s.db().Begin(r.Context())
 	if err != nil {
 		s.renderSettings(w, r, u, vals, dbErr(err), http.StatusBadRequest)
 		return
@@ -389,7 +389,7 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	p := dashPage{View: s.shell(u, "仪表盘", "home", r)}
-	err := s.pool.QueryRow(r.Context(), `
+	err := s.db().QueryRow(r.Context(), `
 		SELECT
 			COALESCE(SUM(actual_price) FILTER (WHERE status NOT IN (1, -1)), 0)::text,
 			COALESCE(SUM(actual_price) FILTER (WHERE status NOT IN (1, -1) AND created_at >= now() - interval '7 days'), 0)::text,
@@ -409,7 +409,7 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	p.Ratio = percent(p.Paid, p.Total)
-	rows, err := s.pool.Query(r.Context(), `
+	rows, err := s.db().Query(r.Context(), `
 		SELECT COALESCE(p.pay_name, '未指定'), COUNT(*)::int
 		FROM orders o LEFT JOIN pays p ON p.id=o.pay_id
 		WHERE o.deleted_at IS NULL AND o.status NOT IN (1, -1)
@@ -432,7 +432,7 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request, u session) {
 		s.fail(w, u, "home", dbErr(err))
 		return
 	}
-	prows, err := s.pool.Query(r.Context(), `
+	prows, err := s.db().Query(r.Context(), `
 		SELECT gd_name, COALESCE(sales_volume,0), COALESCE(actual_price,0)::text
 		FROM goods WHERE deleted_at IS NULL
 		ORDER BY COALESCE(sales_volume,0) DESC, id DESC LIMIT 5`)

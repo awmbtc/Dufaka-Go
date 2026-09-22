@@ -10,13 +10,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/skip2/go-qrcode"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"dufaka/internal/admin"
+	"dufaka/internal/install"
 	"dufaka/internal/order"
 	"dufaka/internal/pay"
 	"dufaka/internal/store"
@@ -26,12 +27,14 @@ import (
 var files embed.FS
 
 type App struct {
-	DB   *store.DB
-	tpl  *template.Template
-	base string
+	mu         sync.RWMutex
+	db         *store.DB
+	tpl        *template.Template
+	base       string
+	configPath string
 }
 
-func New(db *store.DB, base string) (*App, error) {
+func New(db *store.DB, base, configPath string) (*App, error) {
 	tpl, err := template.New("").Funcs(template.FuncMap{
 		"yuan": func(c order.Cents) string { return c.Yuan() },
 		"status": func(s int) string {
@@ -58,7 +61,27 @@ func New(db *store.DB, base string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &App{DB: db, tpl: tpl, base: strings.TrimRight(base, "/")}, nil
+	return &App{db: db, tpl: tpl, base: strings.TrimRight(base, "/"), configPath: configPath}, nil
+}
+
+// Live returns the database connected after install or startup.
+func (a *App) Live() *store.DB { return a.live() }
+
+func (a *App) live() *store.DB {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.db
+}
+
+func (a *App) setDB(db *store.DB) {
+	a.mu.Lock()
+	a.db = db
+	a.mu.Unlock()
+}
+
+func (a *App) installed(r *http.Request) bool {
+	db := a.live()
+	return db != nil && db.Installed(r.Context())
 }
 
 func (a *App) Handler() http.Handler {
@@ -77,18 +100,25 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("GET /pay/{channel}/{payway}/{sn}", a.gateway)
 	mux.HandleFunc("POST /pay/wepay/notify_url", a.wechatNotify)
 	mux.HandleFunc("GET /install", a.installPage)
+	mux.HandleFunc("POST /install/test", a.installTest)
 	mux.HandleFunc("POST /do-install", a.doInstall)
-	admin.Mount(mux, a.DB.Pool)
+	admin.Mount(mux, func() *pgxpool.Pool {
+		db := a.live()
+		if db == nil {
+			return nil
+		}
+		return db.Pool
+	})
 	return a.guard(mux)
 }
 
 func (a *App) guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/install") || r.URL.Path == "/do-install" {
+		if r.URL.Path == "/install" || r.URL.Path == "/install/test" || r.URL.Path == "/do-install" {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if !a.DB.Installed(r.Context()) {
+		if !a.installed(r) {
 			http.Redirect(w, r, "/install", http.StatusFound)
 			return
 		}
@@ -104,23 +134,23 @@ func (a *App) view(w http.ResponseWriter, name string, data any) {
 }
 
 func (a *App) home(w http.ResponseWriter, r *http.Request) {
-	groups, err := a.DB.Home(r.Context())
+	groups, err := a.live().Home(r.Context())
 	if err != nil {
 		a.fail(w, r, err.Error())
 		return
 	}
-	a.view(w, "home.html", map[string]any{"Site": a.DB.Site(r.Context()), "Groups": groups})
+	a.view(w, "home.html", map[string]any{"Site": a.live().Site(r.Context()), "Groups": groups})
 }
 
 func (a *App) buy(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
-	g, err := a.DB.Good(r.Context(), id)
+	g, err := a.live().Good(r.Context(), id)
 	if err != nil {
 		a.fail(w, r, err.Error())
 		return
 	}
-	pays, _ := a.DB.Pays(r.Context(), clientKind(r))
-	a.view(w, "buy.html", map[string]any{"Site": a.DB.Site(r.Context()), "Good": g, "Pays": pays})
+	pays, _ := a.live().Pays(r.Context(), clientKind(r))
+	a.view(w, "buy.html", map[string]any{"Site": a.live().Site(r.Context()), "Good": g, "Pays": pays})
 }
 
 func (a *App) create(w http.ResponseWriter, r *http.Request) {
@@ -137,11 +167,11 @@ func (a *App) create(w http.ResponseWriter, r *http.Request) {
 			extra[k] = v[0]
 		}
 	}
-	o, err := a.DB.CreateOrder(r.Context(), store.CreateInput{
+	o, err := a.live().CreateOrder(r.Context(), store.CreateInput{
 		GID: gid, PayID: payID, Amount: amt, Email: r.FormValue("email"),
 		SearchPwd: r.FormValue("search_pwd"), Coupon: r.FormValue("coupon_code"),
 		IP: r.RemoteAddr, Extra: extra,
-	}, a.DB.Site(r.Context()))
+	}, a.live().Site(r.Context()))
 	if err != nil {
 		a.fail(w, r, err.Error())
 		return
@@ -151,7 +181,7 @@ func (a *App) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) bill(w http.ResponseWriter, r *http.Request) {
-	o, err := a.DB.OrderBySN(r.Context(), r.PathValue("sn"))
+	o, err := a.live().OrderBySN(r.Context(), r.PathValue("sn"))
 	if err != nil {
 		a.fail(w, r, err.Error())
 		return
@@ -160,25 +190,25 @@ func (a *App) bill(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, "订单已过期")
 		return
 	}
-	p, _ := a.DB.Pay(r.Context(), o.PayID)
-	a.view(w, "bill.html", map[string]any{"Site": a.DB.Site(r.Context()), "Order": o, "Pay": p})
+	p, _ := a.live().Pay(r.Context(), o.PayID)
+	a.view(w, "bill.html", map[string]any{"Site": a.live().Site(r.Context()), "Order": o, "Pay": p})
 }
 
 func (a *App) detail(w http.ResponseWriter, r *http.Request) {
-	o, err := a.DB.OrderBySN(r.Context(), r.PathValue("sn"))
+	o, err := a.live().OrderBySN(r.Context(), r.PathValue("sn"))
 	if err != nil {
 		a.fail(w, r, err.Error())
 		return
 	}
-	a.view(w, "orders.html", map[string]any{"Site": a.DB.Site(r.Context()), "Orders": []store.Order{o}})
+	a.view(w, "orders.html", map[string]any{"Site": a.live().Site(r.Context()), "Orders": []store.Order{o}})
 }
 
 func (a *App) searchPage(w http.ResponseWriter, r *http.Request) {
-	a.view(w, "search.html", map[string]any{"Site": a.DB.Site(r.Context())})
+	a.view(w, "search.html", map[string]any{"Site": a.live().Site(r.Context())})
 }
 
 func (a *App) poll(w http.ResponseWriter, r *http.Request) {
-	o, err := a.DB.OrderBySN(r.Context(), r.PathValue("sn"))
+	o, err := a.live().OrderBySN(r.Context(), r.PathValue("sn"))
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil || o.Status == -1 {
 		_ = json.NewEncoder(w).Encode(map[string]any{"msg": "expired", "code": 400001})
@@ -198,12 +228,12 @@ func (a *App) searchSN(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) searchEmail(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
-	site := a.DB.Site(r.Context())
+	site := a.live().Site(r.Context())
 	if r.FormValue("email") == "" || (site.SearchPwd && r.FormValue("search_pwd") == "") {
 		a.fail(w, r, "请求不合法")
 		return
 	}
-	list, err := a.DB.OrdersByEmail(r.Context(), r.FormValue("email"), r.FormValue("search_pwd"), site.SearchPwd)
+	list, err := a.live().OrdersByEmail(r.Context(), r.FormValue("email"), r.FormValue("search_pwd"), site.SearchPwd)
 	if err != nil || len(list) == 0 {
 		a.fail(w, r, "未找到相关订单")
 		return
@@ -221,7 +251,7 @@ func (a *App) searchBrowser(w http.ResponseWriter, r *http.Request) {
 	_ = json.Unmarshal([]byte(c.Value), &sns)
 	var list []store.Order
 	for _, sn := range sns {
-		if o, err := a.DB.OrderBySN(r.Context(), sn); err == nil {
+		if o, err := a.live().OrderBySN(r.Context(), sn); err == nil {
 			list = append(list, o)
 		}
 	}
@@ -229,16 +259,16 @@ func (a *App) searchBrowser(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, "浏览器没有相关订单")
 		return
 	}
-	a.view(w, "orders.html", map[string]any{"Site": a.DB.Site(r.Context()), "Orders": list})
+	a.view(w, "orders.html", map[string]any{"Site": a.live().Site(r.Context()), "Orders": list})
 }
 
 func (a *App) gateway(w http.ResponseWriter, r *http.Request) {
-	o, err := a.DB.OrderBySN(r.Context(), r.PathValue("sn"))
+	o, err := a.live().OrderBySN(r.Context(), r.PathValue("sn"))
 	if err != nil {
 		a.fail(w, r, err.Error())
 		return
 	}
-	p, err := a.DB.Pay(r.Context(), o.PayID)
+	p, err := a.live().Pay(r.Context(), o.PayID)
 	if err != nil {
 		a.fail(w, r, err.Error())
 		return
@@ -259,7 +289,7 @@ func (a *App) gateway(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.view(w, "qrpay.html", map[string]any{
-		"Site": a.DB.Site(r.Context()), "Order": o, "Pay": p,
+		"Site": a.live().Site(r.Context()), "Order": o, "Pay": p,
 		"QR": base64.StdEncoding.EncodeToString(png),
 	})
 }
@@ -294,7 +324,7 @@ func (a *App) wechatNotify(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(204)
 		return
 	}
-	_, err = a.DB.Complete(r.Context(), n.OutTradeNo, order.Cents(n.Amount.Total), n.TransactionID)
+	_, err = a.live().Complete(r.Context(), n.OutTradeNo, order.Cents(n.Amount.Total), n.TransactionID)
 	if err != nil {
 		http.Error(w, "fail", 500)
 		return
@@ -304,39 +334,78 @@ func (a *App) wechatNotify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) installPage(w http.ResponseWriter, r *http.Request) {
-	if a.DB.Installed(r.Context()) {
-		http.Error(w, "已经安装", 409)
+	if a.installed(r) {
+		http.Redirect(w, r, "/admin", http.StatusFound)
 		return
 	}
-	a.view(w, "install.html", nil)
+	page := install.DefaultPage(a.configPath, a.base)
+	db := a.live()
+	page.Connected = db != nil
+	if db != nil {
+		page.Tables = db.Installed(r.Context())
+	}
+	a.view(w, "install.html", page)
 }
 
-func (a *App) doInstall(w http.ResponseWriter, r *http.Request) {
-	if a.DB.Installed(r.Context()) {
-		http.Error(w, "已经安装", 409)
+func (a *App) installTest(w http.ResponseWriter, r *http.Request) {
+	if a.installed(r) {
+		http.Error(w, "已经安装", http.StatusConflict)
 		return
 	}
 	_ = r.ParseForm()
-	user := r.FormValue("admin_username")
-	pass := r.FormValue("admin_password")
-	if user == "" || len(pass) < 6 {
-		a.fail(w, r, "请填写管理员账号，密码至少 6 位")
-		return
-	}
-	hash := hashPass(pass)
-	_, err := a.DB.Pool.Exec(r.Context(), `INSERT INTO admin_users (username, password, name, created_at, updated_at) VALUES ($1,$2,$3,now(),now())`, user, hash, user)
+	err := install.Probe(r.Context(), formFrom(r))
+	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
-		a.fail(w, r, err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": err.Error()})
 		return
 	}
-	_ = a.DB.PutSetting(r.Context(), "title", or(r.FormValue("title"), "独角数卡"))
-	_ = a.DB.PutSetting(r.Context(), "template", "unicorn")
-	_ = a.DB.PutSetting(r.Context(), "order_expire_time", "5")
-	http.Redirect(w, r, "/admin", http.StatusFound)
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "message": "数据库连接成功"})
+}
+
+func (a *App) doInstall(w http.ResponseWriter, r *http.Request) {
+	if a.installed(r) {
+		http.Redirect(w, r, "/admin", http.StatusFound)
+		return
+	}
+	_ = r.ParseForm()
+	form := formFrom(r)
+	page := install.DefaultPage(a.configPath, a.base)
+	page.Host, page.Port, page.Database, page.User = form.Host, form.Port, form.Database, form.User
+	page.Title, page.AppURL = form.Title, form.AppURL
+	result, err := install.Run(r.Context(), form, a.configPath)
+	if err != nil {
+		page.Err = err.Error()
+		a.view(w, "install.html", page)
+		return
+	}
+	os.Setenv("DUFAKA_SESSION_KEY", result.SessionKey)
+	os.Setenv("DUFAKA_DATABASE_URL", result.DSN)
+	db, err := store.Open(r.Context(), result.DSN)
+	if err != nil {
+		page.Err = "配置已写入，但进程没有连上新数据库，请用该配置重启"
+		a.view(w, "install.html", page)
+		return
+	}
+	a.setDB(db)
+	if a.base == "" {
+		a.base = result.AppURL
+	}
+	page.Done = &result
+	a.view(w, "install.html", page)
+}
+
+func formFrom(r *http.Request) install.Form {
+	return install.Form{
+		Host: r.FormValue("db_host"), Port: r.FormValue("db_port"), Database: r.FormValue("db_database"),
+		User: r.FormValue("db_username"), Password: r.FormValue("db_password"),
+		Title: r.FormValue("title"), AppURL: r.FormValue("app_url"),
+		Admin: r.FormValue("admin_username"), AdminPwd: r.FormValue("admin_password"), Confirm: r.FormValue("admin_password_confirm"),
+	}
 }
 
 func (a *App) fail(w http.ResponseWriter, r *http.Request, msg string) {
-	a.view(w, "error.html", map[string]any{"Site": a.DB.Site(r.Context()), "Message": msg})
+	a.view(w, "error.html", map[string]any{"Site": a.live().Site(r.Context()), "Message": msg})
 }
 
 func clientKind(r *http.Request) int {
@@ -360,19 +429,4 @@ func remember(w http.ResponseWriter, r *http.Request, sn string) {
 func readAll(r *http.Request) ([]byte, error) {
 	defer r.Body.Close()
 	return io.ReadAll(io.LimitReader(r.Body, 1<<20))
-}
-
-func hashPass(p string) string {
-	b, err := bcrypt.GenerateFromPassword([]byte(p), bcrypt.DefaultCost)
-	if err != nil {
-		return ""
-	}
-	return string(b)
-}
-
-func or(a, b string) string {
-	if a == "" {
-		return b
-	}
-	return a
 }

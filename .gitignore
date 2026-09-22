@@ -1,3 +1,4 @@
 .env
 *.pem
 /dufaka
+dufaka.json

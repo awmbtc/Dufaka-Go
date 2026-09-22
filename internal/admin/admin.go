@@ -31,7 +31,14 @@ const cookieName = "dufaka_admin"
 const sessionTTL = 7 * 24 * time.Hour
 
 type Server struct {
-	pool *pgxpool.Pool
+	poolFn func() *pgxpool.Pool
+}
+
+func (s *Server) db() *pgxpool.Pool {
+	if s.poolFn == nil {
+		return nil
+	}
+	return s.poolFn()
 }
 
 // View is the shell data for every authenticated page.
@@ -117,8 +124,8 @@ var pages = template.Must(template.New("admin").Funcs(template.FuncMap{
 
 // Mount registers the /admin site on mux. pool may be nil in tests that only
 // render public pages; data pages then report that the database is unavailable.
-func Mount(mux *http.ServeMux, pool *pgxpool.Pool) {
-	s := &Server{pool: pool}
+func Mount(mux *http.ServeMux, poolFn func() *pgxpool.Pool) {
+	s := &Server{poolFn: poolFn}
 	mux.HandleFunc("GET /admin/login", s.loginForm)
 	mux.HandleFunc("POST /admin/login", s.login)
 	mux.HandleFunc("GET /admin/logout", s.logout)
@@ -187,7 +194,7 @@ func (s *Server) authed(next func(http.ResponseWriter, *http.Request, session)) 
 }
 
 func (s *Server) ready(w http.ResponseWriter, u session) bool {
-	if s.pool != nil {
+	if s.db() != nil {
 		return true
 	}
 	s.render(w, http.StatusServiceUnavailable, "message", messagePage{
@@ -449,7 +456,7 @@ type opt struct {
 }
 
 func (s *Server) nameOptions(r *http.Request, query string, args ...any) ([]opt, error) {
-	rows, err := s.pool.Query(r.Context(), query, args...)
+	rows, err := s.db().Query(r.Context(), query, args...)
 	if err != nil {
 		return nil, err
 	}

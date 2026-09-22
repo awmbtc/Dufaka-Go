@@ -40,7 +40,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusBadRequest, "login", page)
 		return
 	}
-	if s.pool == nil {
+	if s.db() == nil {
 		page.Err = "数据库未连接"
 		s.render(w, http.StatusServiceUnavailable, "login", page)
 		return
@@ -52,7 +52,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	var hash, name string
-	err := s.pool.QueryRow(r.Context(), `SELECT id, password, name FROM admin_users WHERE username=$1`, user).Scan(&id, &hash, &name)
+	err := s.db().QueryRow(r.Context(), `SELECT id, password, name FROM admin_users WHERE username=$1`, user).Scan(&id, &hash, &name)
 	if err != nil || !passwordOK(hash, pass) {
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			page.Err = dbErr(err)

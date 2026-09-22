@@ -49,7 +49,7 @@ func (s *Server) couponEdit(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	var f couponForm
-	err := s.pool.QueryRow(r.Context(), `SELECT id, coupon, discount::text, ret, is_use, is_open FROM coupons WHERE id=$1 AND deleted_at IS NULL`, id).
+	err := s.db().QueryRow(r.Context(), `SELECT id, coupon, discount::text, ret, is_use, is_open FROM coupons WHERE id=$1 AND deleted_at IS NULL`, id).
 		Scan(&f.ID, &f.Code, &f.Discount, &f.Ret, &f.Use, &f.Open)
 	if errors.Is(err, pgx.ErrNoRows) {
 		s.fail(w, u, "coupons", "记录不存在")
@@ -59,7 +59,7 @@ func (s *Server) couponEdit(w http.ResponseWriter, r *http.Request, u session) {
 		s.fail(w, u, "coupons", dbErr(err))
 		return
 	}
-	rows, err := s.pool.Query(r.Context(), `SELECT goods_id FROM coupons_goods WHERE coupons_id=$1`, id)
+	rows, err := s.db().Query(r.Context(), `SELECT goods_id FROM coupons_goods WHERE coupons_id=$1`, id)
 	if err != nil {
 		s.fail(w, u, "coupons", dbErr(err))
 		return
@@ -97,7 +97,7 @@ func (s *Server) renderCoupons(w http.ResponseWriter, r *http.Request, u session
 	if trashed(r) {
 		where = "c.deleted_at IS NOT NULL"
 	}
-	rows, err := s.pool.Query(r.Context(), `
+	rows, err := s.db().Query(r.Context(), `
 		SELECT c.id, c.coupon, c.discount::text, c.ret, c.is_use, c.is_open,
 			to_char(COALESCE(c.created_at, now()), 'YYYY-MM-DD HH24:MI'),
 			c.deleted_at IS NOT NULL,
@@ -188,7 +188,7 @@ func (s *Server) couponSave(w http.ResponseWriter, r *http.Request, u session) {
 		s.renderCoupons(w, r, u, f, action, err.Error(), http.StatusBadRequest)
 		return
 	}
-	tx, err := s.pool.Begin(r.Context())
+	tx, err := s.db().Begin(r.Context())
 	if err != nil {
 		s.renderCoupons(w, r, u, f, action, dbErr(err), http.StatusBadRequest)
 		return
@@ -327,7 +327,7 @@ func (s *Server) ordersList(w http.ResponseWriter, r *http.Request, u session) {
 		FROM orders o LEFT JOIN pays p ON p.id=o.pay_id
 		WHERE ` + strings.Join(where, " AND ") +
 		` ORDER BY o.id DESC LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
-	rows, err := s.pool.Query(r.Context(), q, args...)
+	rows, err := s.db().Query(r.Context(), q, args...)
 	if err != nil {
 		s.fail(w, u, "orders", dbErr(err))
 		return
@@ -358,7 +358,7 @@ func (s *Server) ordersList(w http.ResponseWriter, r *http.Request, u session) {
 
 func (s *Server) loadOrder(r *http.Request, id int) (orderRow, error) {
 	var row orderRow
-	err := s.pool.QueryRow(r.Context(), `
+	err := s.db().QueryRow(r.Context(), `
 		SELECT o.id, o.order_sn, o.title, o.email, o.buy_amount, o.goods_price::text, o.total_price::text,
 			o.coupon_discount_price::text, o.wholesale_discount_price::text, o.actual_price::text,
 			o.status, COALESCE(o.search_pwd,''), COALESCE(o.trade_no,''), COALESCE(p.pay_name,''),
@@ -497,7 +497,7 @@ func (s *Server) payEdit(w http.ResponseWriter, r *http.Request, u session) {
 
 func (s *Server) loadPay(r *http.Request, id int) (payForm, error) {
 	var f payForm
-	err := s.pool.QueryRow(r.Context(), `
+	err := s.db().QueryRow(r.Context(), `
 		SELECT id, pay_name, pay_check, pay_method, pay_client, COALESCE(merchant_id,''),
 			COALESCE(merchant_key,''), merchant_pem, pay_handleroute, is_open
 		FROM pays WHERE id=$1 AND deleted_at IS NULL`, id).Scan(
@@ -509,7 +509,7 @@ func (s *Server) renderPays(w http.ResponseWriter, r *http.Request, u session, f
 	if !s.ready(w, u) {
 		return
 	}
-	rows, err := s.pool.Query(r.Context(), `
+	rows, err := s.db().Query(r.Context(), `
 		SELECT id, pay_name, pay_check, pay_method, pay_client, COALESCE(merchant_id,''),
 			COALESCE(merchant_key,''), merchant_pem, pay_handleroute, is_open,
 			to_char(COALESCE(created_at, now()), 'YYYY-MM-DD HH24:MI')
@@ -599,7 +599,7 @@ func (s *Server) paySave(w http.ResponseWriter, r *http.Request, u session) {
 		return
 	}
 	if id == 0 {
-		_, err = s.pool.Exec(r.Context(), `
+		_, err = s.db().Exec(r.Context(), `
 			INSERT INTO pays (pay_name, pay_check, pay_method, pay_client, merchant_id, merchant_key, merchant_pem, pay_handleroute, is_open, created_at, updated_at)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,now(),now())`,
 			f.Name, f.Check, f.Method, f.Client, f.MerchantID, f.Key, f.Pem, f.Route, f.Open)
