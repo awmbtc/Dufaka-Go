@@ -72,7 +72,7 @@ func DefaultPage(configPath, base string) Page {
 		Port:       "5432",
 		Database:   "dufaka",
 		User:       "dufaka",
-		Title:      "独角数卡",
+		Title:      "Dufaka-Go",
 		AppURL:     base,
 	}
 }
@@ -136,7 +136,7 @@ func Run(ctx context.Context, f Form, configPath string) (Result, error) {
 		return Result{}, errors.New("两次输入的密码不一致")
 	}
 	if strings.TrimSpace(f.Title) == "" {
-		f.Title = "独角数卡"
+		f.Title = "Dufaka-Go"
 	}
 	if strings.TrimSpace(f.AppURL) == "" {
 		return Result{}, errors.New("请填写站点网址")

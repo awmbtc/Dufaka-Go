@@ -1,27 +1,72 @@
 {{define "buy.html"}}{{template "head" .}}
-<div class="row"><div class="col-lg-7"><div class="card"><div class="card-body">
-  <h3>{{.Good.Name}}</h3>
-  <p>{{.Good.Desc}}</p>
-  <div class="price fs-3">¥{{yuan .Good.Actual}}</div>
-  <p class="text-secondary">库存 {{.Good.InStock}}{{if .Good.Prompt}} · {{.Good.Prompt}}{{end}}</p>
-  <div>{{.Good.Description}}</div>
-</div></div></div>
-<div class="col-lg-5"><div class="card"><div class="card-body">
-<form method="post" action="/create-order">
-  <input type="hidden" name="gid" value="{{.Good.ID}}">
-  <label class="form-label">邮箱</label>
-  <input class="form-control mb-2" name="email" required>
-  <label class="form-label">查询密码</label>
-  <input class="form-control mb-2" name="search_pwd">
-  <label class="form-label">数量</label>
-  <input class="form-control mb-2" name="by_amount" value="1" required>
-  <label class="form-label">优惠码</label>
-  <input class="form-control mb-2" name="coupon_code">
-  <label class="form-label">支付方式</label>
-  <select class="form-select mb-3" name="payway" required>
-    {{range .Pays}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
-  </select>
-  <button class="btn btn-dark w-100">提交订单</button>
-</form>
-</div></div></div></div>
+<section class="main-container">
+    <div class="container">
+        <div class="good-card">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8">
+                    <div class="card mt-3">
+                        <div class="row no-gutters">
+                            <div class="col-md-4">
+                                <img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" class="card-img-top p-5" alt="{{.Good.Name}}">
+                                {{if eq .Good.Type 1}}
+                                <h6><small class="badge bg-success position-absolute top-0 start-0">自动发货</small></h6>
+                                {{else}}
+                                <h6><small class="badge bg-warning position-absolute top-0 start-0">人工处理</small></h6>
+                                {{end}}
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body p-4">
+                                    <h3 class="card-title">{{.Good.Name}}</h3>
+                                    <h6><small class="text-muted">库存：{{.Good.InStock}}</small></h6>
+                                    <p>{{.Good.Desc}}</p>
+                                    <div class="buy-form mt-3">
+                                        <form action="/create-order" method="post">
+                                            <div class="form-group row">
+                                                <div class="col-12"><h6>价格：¥ {{yuan .Good.Actual}}</h6></div>
+                                                <input type="hidden" name="gid" value="{{.Good.ID}}">
+                                                <div class="col-xs-12 col-md-6">
+                                                    <label class="col-form-label" for="email">邮箱:</label>
+                                                    <input type="email" class="form-control form-control-sm" name="email" id="email" required>
+                                                </div>
+                                                <div class="col-xs-12 col-md-4">
+                                                    <label class="col-form-label" for="shop-number">购买数量:</label>
+                                                    <input type="number" class="form-control form-control-sm" id="shop-number" name="by_amount" min="1" value="1">
+                                                </div>
+                                                <div class="col-xs-12 col-md-6">
+                                                    <label class="col-form-label" for="coupon">优惠码:</label>
+                                                    <input type="text" class="form-control form-control-sm" id="coupon" name="coupon_code">
+                                                </div>
+                                                {{if .Site.SearchPwd}}
+                                                <div class="col-xs-12 col-md-6">
+                                                    <label class="col-form-label" for="search_pwd">查询密码:</label>
+                                                    <input type="text" class="form-control form-control-sm" id="search_pwd" name="search_pwd" required>
+                                                </div>
+                                                {{end}}
+                                                <div class="col-12">
+                                                    <label class="col-form-label">支付方式：</label>
+                                                    {{range $i, $p := .Pays}}
+                                                    <div class="form-check form-check-inline">
+                                                        <label class="form-check-label">
+                                                            <input type="radio" class="form-check-input" name="payway" value="{{$p.ID}}" {{if eq $i 0}}checked{{end}}>
+                                                            {{$p.Name}}
+                                                        </label>
+                                                    </div>
+                                                    {{end}}
+                                                </div>
+                                                <div class="col-12 mt-2">
+                                                    <button type="submit" class="btn btn-outline-primary"><i class="ali-icon">&#xe7d8;</i> 立即下单</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mt-3"><div class="card-body">{{.Good.Description}}</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {{template "foot" .}}{{end}}

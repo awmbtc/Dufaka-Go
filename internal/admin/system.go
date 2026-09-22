@@ -179,7 +179,7 @@ func settingTabs(m map[string]string) []settingTab {
 			text("keywords", "网站关键词", "", ""),
 			area("description", "网站描述", ""),
 			{Key: "template", Label: "站点模板", Kind: "select", Value: settingValue(m, "template", "unicorn"), Options: []opt{
-				{Value: "unicorn", Label: "官方[unicorn-独角兽]"},
+				{Value: "unicorn", Label: "Unicorn"},
 				{Value: "luna", Label: "官方[luna-露娜]"},
 				{Value: "hyper", Label: "官方[hyper-极光]"},
 			}},

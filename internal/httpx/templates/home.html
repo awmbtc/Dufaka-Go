@@ -1,21 +1,92 @@
 {{define "home.html"}}{{template "head" .}}
-<div class="card mb-4"><div class="card-body">
-  <h4>站点公告</h4>
-  <p class="lead mb-0">{{.Site.Notice}}</p>
-</div></div>
-<h3 class="text-center">今天需要一点什么？</h3>
-<p class="text-center text-secondary">自动发货，下单后即可查询</p>
-{{range .Groups}}
-<h5 class="mt-4">{{.Name}}</h5>
-<div class="row g-3">
-{{range .Goods}}
-<div class="col-6 col-md-3"><a class="text-reset text-decoration-none" href="/buy/{{.ID}}"><div class="card h-100"><div class="card-body">
-  <div class="small text-success">{{if eq .Type 1}}自动发货{{else}}人工处理{{end}}</div>
-  <div class="fw-semibold">{{.Name}}</div>
-  <div class="price">¥{{yuan .Actual}}</div>
-  <div class="small text-secondary">库存 {{.InStock}} · 销量 {{.Sales}}</div>
-</div></div></a></div>
-{{end}}
+<div class="notice">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <div class="jumbotron jumbotron-fluid p-1">
+                            <div class="container">
+                                <h4>站点公告：</h4>
+                                <p class="lead">{{.Site.Notice}}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-{{end}}
+<section class="main-container">
+    <div class="category">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h3 class="text-center"><span>今天需要一点什么？</span></h3>
+                    <div class="separator"></div>
+                    <p class="lead text-center"><span>本站所有商品均为自动发货，购买后即可查询订单。</span></p>
+                </div>
+                <div class="col-md-12">
+                    <div class="category-menus">
+                        <ul class="nav nav-pills justify-content-center">
+                            <li class="nav-item"><a href="#group-all" data-bs-toggle="tab" class="btn btn-outline-secondary active">全部</a></li>
+                            {{range .Groups}}
+                            <li class="nav-item"><a href="#group-{{.ID}}" data-bs-toggle="tab" class="btn btn-outline-secondary">{{.Name}}</a></li>
+                            {{end}}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="goods">
+        <div class="container">
+            <div class="goods-list mb-5">
+                <div id="goodsTabContent" class="tab-content">
+                    <div class="tab-pane fade active show" id="group-all">
+                        <div class="row row-cols-2 row-cols-md-5 g-4">
+                            {{range .Groups}}{{range .Goods}}
+                            <div class="col">
+                                <div class="card position-relative">
+                                    {{if eq .Type 1}}
+                                    <span class="badge bg-success position-absolute top-0 start-0"><i class="ali-icon">&#xe7db;</i> 自动发货</span>
+                                    {{else}}
+                                    <span class="badge bg-warning position-absolute top-0 start-0"><i class="ali-icon">&#xe74b;</i> 人工处理</span>
+                                    {{end}}
+                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" class="card-img-top" alt="{{.Name}}">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-truncate">{{.Name}}</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-success"><i class="ali-icon">&#xe703;</i> <strong>{{yuan .Actual}}</strong></button>
+                                        <h6 class="mt-2"><small class="text-muted">库存：{{.InStock}}</small></h6>
+                                        <a href="/buy/{{.ID}}" class="btn btn-primary fr"><i class="ali-icon">&#xe7d8;</i> 立即下单</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}{{end}}
+                        </div>
+                    </div>
+                    {{range .Groups}}
+                    <div class="tab-pane fade" id="group-{{.ID}}">
+                        <div class="row row-cols-2 row-cols-md-5 g-4">
+                            {{range .Goods}}
+                            <div class="col">
+                                <div class="card position-relative">
+                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" class="card-img-top" alt="{{.Name}}">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-truncate">{{.Name}}</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-success"><strong>{{yuan .Actual}}</strong></button>
+                                        <h6 class="mt-2"><small class="text-muted">库存：{{.InStock}}</small></h6>
+                                        <a href="/buy/{{.ID}}" class="btn btn-primary fr">立即下单</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {{template "foot" .}}{{end}}

@@ -44,7 +44,7 @@ type Site struct {
 }
 
 func (db *DB) Site(ctx context.Context) Site {
-	s := Site{Title: "独角数卡", TextLogo: "独角数卡", Template: "unicorn", Language: "zh_CN", ExpireMin: 5}
+	s := Site{Title: "Dufaka-Go", TextLogo: "Dufaka-Go", Template: "unicorn", Language: "zh_CN", ExpireMin: 5}
 	rows, err := db.Pool.Query(ctx, `SELECT key, value FROM settings`)
 	if err != nil {
 		return s

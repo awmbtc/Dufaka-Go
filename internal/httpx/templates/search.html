@@ -1,16 +1,28 @@
 {{define "search.html"}}{{template "head" .}}
-<div class="row g-3">
-<div class="col-md-4"><div class="card"><div class="card-body">
-  <h5>订单号查询</h5>
-  <form method="post" action="/search-order-by-sn"><input class="form-control mb-2" name="order_sn"><button class="btn btn-dark">查询</button></form>
-</div></div></div>
-<div class="col-md-4"><div class="card"><div class="card-body">
-  <h5>邮箱查询</h5>
-  <form method="post" action="/search-order-by-email"><input class="form-control mb-2" name="email" placeholder="邮箱"><input class="form-control mb-2" name="search_pwd" placeholder="查询密码"><button class="btn btn-dark">查询</button></form>
-</div></div></div>
-<div class="col-md-4"><div class="card"><div class="card-body">
-  <h5>浏览器查询</h5>
-  <form method="post" action="/search-order-by-browser"><button class="btn btn-dark">查询本机订单</button></form>
-</div></div></div>
-</div>
+<section class="main-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card mt-3"><div class="card-body">
+                    <h3 class="text-center">订单查询</h3>
+                    <form method="post" action="/search-order-by-sn" class="mb-3">
+                        <label class="col-form-label">订单号</label>
+                        <input class="form-control form-control-sm" name="order_sn">
+                        <button class="btn btn-primary mt-2">查询</button>
+                    </form>
+                    <form method="post" action="/search-order-by-email" class="mb-3">
+                        <label class="col-form-label">邮箱</label>
+                        <input class="form-control form-control-sm" name="email">
+                        <label class="col-form-label">查询密码</label>
+                        <input class="form-control form-control-sm" name="search_pwd">
+                        <button class="btn btn-primary mt-2">查询</button>
+                    </form>
+                    <form method="post" action="/search-order-by-browser">
+                        <button class="btn btn-outline-primary">查询本机订单</button>
+                    </form>
+                </div></div>
+            </div>
+        </div>
+    </div>
+</section>
 {{template "foot" .}}{{end}}

@@ -1,11 +1,35 @@
 {{define "bill.html"}}{{template "head" .}}
-<div class="card"><div class="card-body">
-  <h3>确认订单</h3>
-  <p>订单号 {{.Order.SN}}</p>
-  <p>{{.Order.Title}} × {{.Order.Amount}}</p>
-  <p>总价 ¥{{yuan .Order.Total}}，优惠 ¥{{yuan .Order.CouponOff}}，批发优惠 ¥{{yuan .Order.WholesaleOff}}</p>
-  <p class="price fs-3">实付 ¥{{yuan .Order.Actual}}</p>
-  <p>状态：{{status .Order.Status}}</p>
-  {{if eq .Order.Status 1}}<a class="btn btn-dark" href="/pay-gateway/{{.Pay.Check}}/{{.Pay.Check}}/{{.Order.SN}}">去支付 {{.Pay.Name}}</a>{{end}}
-</div></div>
+<section class="main-container">
+    <div class="container">
+        <div class="good-card">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-12">
+                    <div class="card m-3">
+                        <div class="card-body p-2 text-center">
+                            <h3 class="card-title text-primary ali-icon">&#xe832; 确认订单</h3>
+                        </div>
+                        <div class="card card-body p-3 border-0">
+                            <div class="mx-auto">
+                                <h5><small class="text-muted">订单号：{{.Order.SN}}</small></h5>
+                                <div class="mb-1"><label>商品名称：</label><span>{{.Order.Title}}</span></div>
+                                <div class="mb-1"><label>商品单价：</label><span>{{yuan .Order.GoodsPrice}}</span></div>
+                                <div class="mb-1"><label>购买数量：</label><span>{{.Order.Amount}}</span></div>
+                                <div class="mb-1"><label>邮箱：</label><span>{{.Order.Email}}</span></div>
+                                <div class="mb-1"><label>批发优惠：</label><span>¥{{yuan .Order.WholesaleOff}}</span></div>
+                                <div class="mb-1"><label>优惠金额：</label><span>¥{{yuan .Order.CouponOff}}</span></div>
+                                <div class="mb-1"><label>实际支付：</label><span class="text-danger">¥{{yuan .Order.Actual}}</span></div>
+                                <div class="mb-1"><label>订单状态：</label><span>{{status .Order.Status}}</span></div>
+                                {{if eq .Order.Status 1}}
+                                <div class="mt-3 text-center">
+                                    <a class="btn btn-primary" href="/pay-gateway/{{.Pay.Check}}/{{.Pay.Check}}/{{.Order.SN}}">去支付 {{.Pay.Name}}</a>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {{template "foot" .}}{{end}}

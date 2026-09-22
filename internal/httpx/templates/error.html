@@ -1,4 +1,8 @@
 {{define "error.html"}}{{template "head" .}}
-<div class="alert alert-danger">{{.Message}}</div>
-<p><a href="/">返回首页</a></p>
+<section class="main-container">
+    <div class="container">
+        <div class="alert alert-danger m-3">{{.Message}}</div>
+        <p class="text-center"><a href="/">返回首页</a></p>
+    </div>
+</section>
 {{template "foot" .}}{{end}}

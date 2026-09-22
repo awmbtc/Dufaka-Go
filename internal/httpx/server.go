@@ -86,6 +86,7 @@ func (a *App) installed(r *http.Request) bool {
 
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
 	mux.HandleFunc("GET /{$}", a.home)
 	mux.HandleFunc("GET /buy/{id}", a.buy)
 	mux.HandleFunc("POST /create-order", a.create)
@@ -139,7 +140,7 @@ func (a *App) home(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err.Error())
 		return
 	}
-	a.view(w, "home.html", map[string]any{"Site": a.live().Site(r.Context()), "Groups": groups})
+	a.view(w, "home.html", map[string]any{"Title": "首页", "Site": a.live().Site(r.Context()), "Groups": groups})
 }
 
 func (a *App) buy(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +151,7 @@ func (a *App) buy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pays, _ := a.live().Pays(r.Context(), clientKind(r))
-	a.view(w, "buy.html", map[string]any{"Site": a.live().Site(r.Context()), "Good": g, "Pays": pays})
+	a.view(w, "buy.html", map[string]any{"Title": g.Name, "Site": a.live().Site(r.Context()), "Good": g, "Pays": pays})
 }
 
 func (a *App) create(w http.ResponseWriter, r *http.Request) {
@@ -191,7 +192,7 @@ func (a *App) bill(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p, _ := a.live().Pay(r.Context(), o.PayID)
-	a.view(w, "bill.html", map[string]any{"Site": a.live().Site(r.Context()), "Order": o, "Pay": p})
+	a.view(w, "bill.html", map[string]any{"Title": "确认订单", "Site": a.live().Site(r.Context()), "Order": o, "Pay": p})
 }
 
 func (a *App) detail(w http.ResponseWriter, r *http.Request) {
@@ -200,11 +201,11 @@ func (a *App) detail(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err.Error())
 		return
 	}
-	a.view(w, "orders.html", map[string]any{"Site": a.live().Site(r.Context()), "Orders": []store.Order{o}})
+	a.view(w, "orders.html", map[string]any{"Title": "订单详情", "Site": a.live().Site(r.Context()), "Orders": []store.Order{o}})
 }
 
 func (a *App) searchPage(w http.ResponseWriter, r *http.Request) {
-	a.view(w, "search.html", map[string]any{"Site": a.live().Site(r.Context())})
+	a.view(w, "search.html", map[string]any{"Title": "订单查询", "Site": a.live().Site(r.Context())})
 }
 
 func (a *App) poll(w http.ResponseWriter, r *http.Request) {
@@ -259,7 +260,7 @@ func (a *App) searchBrowser(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, "浏览器没有相关订单")
 		return
 	}
-	a.view(w, "orders.html", map[string]any{"Site": a.live().Site(r.Context()), "Orders": list})
+	a.view(w, "orders.html", map[string]any{"Title": "订单详情", "Site": a.live().Site(r.Context()), "Orders": list})
 }
 
 func (a *App) gateway(w http.ResponseWriter, r *http.Request) {
@@ -289,7 +290,7 @@ func (a *App) gateway(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.view(w, "qrpay.html", map[string]any{
-		"Site": a.live().Site(r.Context()), "Order": o, "Pay": p,
+		"Title": "扫码支付", "Site": a.live().Site(r.Context()), "Order": o, "Pay": p,
 		"QR": base64.StdEncoding.EncodeToString(png),
 	})
 }
@@ -405,7 +406,11 @@ func formFrom(r *http.Request) install.Form {
 }
 
 func (a *App) fail(w http.ResponseWriter, r *http.Request, msg string) {
-	a.view(w, "error.html", map[string]any{"Site": a.live().Site(r.Context()), "Message": msg})
+	site := store.Site{Title: "Dufaka-Go", TextLogo: "Dufaka-Go", Template: "unicorn"}
+	if db := a.live(); db != nil {
+		site = db.Site(r.Context())
+	}
+	a.view(w, "error.html", map[string]any{"Title": "提示", "Site": site, "Message": msg})
 }
 
 func clientKind(r *http.Request) int {
