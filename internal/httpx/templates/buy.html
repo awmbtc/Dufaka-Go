@@ -18,6 +18,7 @@
                                 <div class="card-body p-4">
                                     <h3 class="card-title">{{.Good.Name}}</h3>
                                     <h6><small class="text-muted">库存：{{.Good.InStock}}</small></h6>
+                                    {{if gt .Good.Retail .Good.Actual}}<h6><small class="text-muted"><del>¥ {{yuan .Good.Retail}}</del></small></h6>{{end}}
                                     <p>{{.Good.Desc}}</p>
                                     <div class="buy-form mt-3">
                                         <form action="/create-order" method="post">
@@ -36,6 +37,12 @@
                                                     <label class="col-form-label" for="coupon">优惠码:</label>
                                                     <input type="text" class="form-control form-control-sm" id="coupon" name="coupon_code">
                                                 </div>
+                                                {{if eq .Good.Type 2}}{{range extraInputs .Good.Other}}
+                                                <div class="col-xs-12 col-md-6">
+                                                    <label class="col-form-label" for="extra-{{.Field}}">{{.Label}}:</label>
+                                                    <input type="text" class="form-control form-control-sm" id="extra-{{.Field}}" name="{{.Field}}" {{if .Required}}required{{end}}>
+                                                </div>
+                                                {{end}}{{end}}
                                                 {{if .Site.SearchPwd}}
                                                 <div class="col-xs-12 col-md-6">
                                                     <label class="col-form-label" for="search_pwd">查询密码:</label>
@@ -47,7 +54,7 @@
                                                     {{range $i, $p := .Pays}}
                                                     <div class="form-check form-check-inline">
                                                         <label class="form-check-label">
-                                                            <input type="radio" class="form-check-input" name="payway" value="{{$p.ID}}" {{if eq $i 0}}checked{{end}}>
+                                                            <input type="radio" class="form-check-input" name="payway" value="{{$p.ID}}" style="width:20px;height:20px" {{if eq $i 0}}checked{{end}}>
                                                             {{$p.Name}}
                                                         </label>
                                                     </div>

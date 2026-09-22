@@ -89,4 +89,25 @@
         </div>
     </div>
 </section>
+<script>
+document.querySelectorAll(".category-menus a[data-bs-toggle='tab']").forEach(function (link) {
+  link.addEventListener("click", function (event) {
+    event.preventDefault();
+    var pane = document.querySelector(link.getAttribute("href"));
+    if (!pane) return;
+    document.querySelectorAll("#goodsTabContent .tab-pane").forEach(function (item) {
+      item.classList.remove("active", "show");
+    });
+    pane.classList.add("active", "show");
+    document.querySelectorAll(".category-menus a").forEach(function (item) {
+      item.classList.remove("active");
+    });
+    link.classList.add("active");
+  });
+});
+</script>
+<style>
+.form-check-input { width: 20px; height: 20px; }
+.form-check-label { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+</style>
 {{template "foot" .}}{{end}}

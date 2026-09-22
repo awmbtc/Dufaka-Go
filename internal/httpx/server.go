@@ -57,7 +57,10 @@ func New(db *store.DB, base, configPath string) (*App, error) {
 				return "未知"
 			}
 		},
-		"lunaGoods": lunaGoods,
+		"lunaGoods":     lunaGoods,
+		"stockPercent":  stockPercent,
+		"wholesaleRows": wholesaleRows,
+		"extraInputs":   extraInputs,
 	}).ParseFS(files, "templates/*.html")
 	if err != nil {
 		return nil, err
@@ -88,6 +91,9 @@ func (a *App) installed(r *http.Request) bool {
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
+	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/assets/style/favicon.ico", http.StatusFound)
+	})
 	mux.HandleFunc("GET /{$}", a.home)
 	mux.HandleFunc("GET /buy/{id}", a.buy)
 	mux.HandleFunc("POST /create-order", a.create)
@@ -215,7 +221,11 @@ func (a *App) detail(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err.Error())
 		return
 	}
-	a.view(w, "orders.html", map[string]any{"Title": "订单详情", "Site": a.live().Site(r.Context()), "Orders": []store.Order{o}})
+	site := a.live().Site(r.Context())
+	if site.SearchPwd && o.SearchPwd != "" && r.URL.Query().Get("pwd") != o.SearchPwd {
+		o.Info = ""
+	}
+	a.view(w, "orders.html", map[string]any{"Title": "订单详情", "Site": site, "Orders": []store.Order{o}})
 }
 
 func (a *App) searchPage(w http.ResponseWriter, r *http.Request) {
@@ -231,6 +241,10 @@ func (a *App) poll(w http.ResponseWriter, r *http.Request) {
 	}
 	if o.Status == 1 {
 		_ = json.NewEncoder(w).Encode(map[string]any{"msg": "wait....", "code": 400000})
+		return
+	}
+	if o.Status != 2 && o.Status != 3 && o.Status != 4 {
+		_ = json.NewEncoder(w).Encode(map[string]any{"msg": "exception", "code": 400002})
 		return
 	}
 	_ = json.NewEncoder(w).Encode(map[string]any{"msg": "success", "code": 200})
@@ -288,12 +302,12 @@ func (a *App) gateway(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err.Error())
 		return
 	}
-	if p.Check != "wescan" && !strings.Contains(p.Check, "wx") {
-		a.fail(w, r, "该支付渠道页面与原站路径一致，当前这一版先接通微信扫码。标识："+p.Check)
+	if p.Check != "wescan" {
+		a.fail(w, r, "该支付渠道还没有接通自己的收银台。标识："+p.Check)
 		return
 	}
 	notify := a.base + "/pay/wepay/notify_url"
-	code, err := pay.Native(r.Context(), p.MerchantID, p.MerchantKey, "", "", p.MerchantPem, "", notify, o.SN, o.Title, int64(o.Actual))
+	code, err := pay.Native(r.Context(), "", p.MerchantID, "", p.MerchantKey, p.MerchantPem, "", notify, o.SN, o.Title, int64(o.Actual))
 	if err != nil {
 		a.fail(w, r, err.Error())
 		return

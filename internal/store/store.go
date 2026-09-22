@@ -153,7 +153,7 @@ func scanGoods(ctx context.Context, db *DB, rows pgx.Rows) ([]Good, error) {
 		g.Retail, _ = order.ParseYuan(retail)
 		g.Open = open == 1
 		if g.Type == 1 {
-			_ = db.Pool.QueryRow(ctx, `SELECT count(*) FROM carmis WHERE goods_id=$1 AND status=1 AND deleted_at IS NULL`, g.ID).Scan(&g.InStock)
+			_ = db.Pool.QueryRow(ctx, `SELECT count(*) FROM carmis WHERE goods_id=$1 AND status=1 AND reserved_order_id IS NULL AND deleted_at IS NULL`, g.ID).Scan(&g.InStock)
 		}
 		list = append(list, g)
 	}
@@ -226,6 +226,12 @@ func (db *DB) CreateOrder(ctx context.Context, in CreateInput, site Site) (Order
 	if site.SearchPwd && strings.TrimSpace(in.SearchPwd) == "" {
 		return Order{}, RuleError{Msg: "请填写查询密码"}
 	}
+	if site.GeeTest && (strings.TrimSpace(in.Extra["geetest_challenge"]) == "" || strings.TrimSpace(in.Extra["geetest_validate"]) == "") {
+		return Order{}, RuleError{Msg: "请完成验证"}
+	}
+	if in.PayID <= 0 {
+		return Order{}, RuleError{Msg: "请选择支付方式"}
+	}
 	tx, err := db.Pool.Begin(ctx)
 	if err != nil {
 		return Order{}, err
@@ -246,25 +252,59 @@ func (db *DB) CreateOrder(ctx context.Context, in CreateInput, site Site) (Order
 	if loops > 0 && in.Amount > 1 {
 		return Order{}, RuleError{Msg: "循环卡密一次只能买 1 件"}
 	}
-	if in.Amount > g.InStock {
-		return Order{}, RuleError{Msg: "库存不足"}
+	var openPay int
+	if err = tx.QueryRow(ctx, `SELECT is_open FROM pays WHERE id=$1 AND deleted_at IS NULL`, in.PayID).Scan(&openPay); err != nil || openPay != 1 {
+		return Order{}, RuleError{Msg: "支付方式不可用"}
+	}
+	if _, err = tx.Exec(ctx, `SELECT id FROM goods WHERE id=$1 FOR UPDATE`, g.ID); err != nil {
+		return Order{}, err
+	}
+	var reserved []int
+	if g.Type == 1 {
+		rows, err := tx.Query(ctx, `
+			SELECT id FROM carmis
+			WHERE goods_id=$1 AND status=1 AND reserved_order_id IS NULL AND deleted_at IS NULL
+			ORDER BY id FOR UPDATE SKIP LOCKED LIMIT $2`, g.ID, in.Amount)
+		if err != nil {
+			return Order{}, err
+		}
+		for rows.Next() {
+			var id int
+			if rows.Scan(&id) == nil {
+				reserved = append(reserved, id)
+			}
+		}
+		rows.Close()
+		if len(reserved) != in.Amount {
+			return Order{}, RuleError{Msg: "库存不足"}
+		}
+	} else {
+		tag, err := tx.Exec(ctx, `UPDATE goods SET in_stock=in_stock-$2, updated_at=now() WHERE id=$1 AND in_stock>=$2`, g.ID, in.Amount)
+		if err != nil {
+			return Order{}, err
+		}
+		if tag.RowsAffected() != 1 {
+			return Order{}, RuleError{Msg: "库存不足"}
+		}
 	}
 	var couponCents string
 	var couponID int
 	if strings.TrimSpace(in.Coupon) != "" {
-		var ret, open int
+		var ret, open, used int
 		err = tx.QueryRow(ctx, `
-			SELECT c.id, c.discount, c.ret, c.is_open FROM coupons c
+			SELECT c.id, c.discount, c.ret, c.is_open, c.is_use FROM coupons c
 			JOIN coupons_goods cg ON cg.coupons_id=c.id
-			WHERE c.coupon=$1 AND cg.goods_id=$2 AND c.deleted_at IS NULL`, in.Coupon, g.ID).Scan(&couponID, &couponCents, &ret, &open)
-		if err != nil || open != 1 {
+			WHERE c.coupon=$1 AND cg.goods_id=$2 AND c.deleted_at IS NULL
+			FOR UPDATE OF c`, in.Coupon, g.ID).Scan(&couponID, &couponCents, &ret, &open, &used)
+		if err != nil {
 			return Order{}, RuleError{Msg: "优惠码不存在"}
 		}
-		if ret <= 0 {
-			return Order{}, RuleError{Msg: "优惠码可用次数不足"}
-		}
-		if _, err = tx.Exec(ctx, `UPDATE coupons SET ret=ret-1, updated_at=now() WHERE id=$1 AND ret>0`, couponID); err != nil {
+		tag, err := tx.Exec(ctx, `UPDATE coupons SET ret=ret-1, updated_at=now() WHERE id=$1 AND ret>0 AND is_open=1 AND is_use<>2`, couponID)
+		if err != nil {
 			return Order{}, err
+		}
+		if err = order.TakeCoupon(open, used, ret, tag.RowsAffected()); err != nil {
+			return Order{}, RuleError{Msg: err.Error()}
 		}
 	}
 	info := ""
@@ -283,7 +323,13 @@ func (db *DB) CreateOrder(ctx context.Context, in CreateInput, site Site) (Order
 			info += parts[1] + ":" + val + "\n"
 		}
 	}
-	total, coff, woff, actual := order.Quote(g.Actual, in.Amount, couponCents, g.Wholesale)
+	total, coff, woff, actual, err := order.Quote(g.Actual, in.Amount, couponCents, g.Wholesale)
+	if err != nil {
+		return Order{}, RuleError{Msg: err.Error()}
+	}
+	if actual <= 0 {
+		return Order{}, RuleError{Msg: "实付金额必须大于 0"}
+	}
 	sn := newSN()
 	var id int
 	err = tx.QueryRow(ctx, `
@@ -296,6 +342,13 @@ func (db *DB) CreateOrder(ctx context.Context, in CreateInput, site Site) (Order
 		in.SearchPwd, in.Email, info, in.PayID, in.IP).Scan(&id)
 	if err != nil {
 		return Order{}, err
+	}
+	if g.Type == 1 {
+		for _, cid := range reserved {
+			if _, err = tx.Exec(ctx, `UPDATE carmis SET reserved_order_id=$2, updated_at=now() WHERE id=$1`, cid, id); err != nil {
+				return Order{}, err
+			}
+		}
 	}
 	if err = tx.Commit(ctx); err != nil {
 		return Order{}, err
@@ -383,7 +436,9 @@ func (db *DB) Complete(ctx context.Context, sn string, paid order.Cents, tradeNo
 		rows, err := tx.Query(ctx, `
 			SELECT id, carmi, is_loop FROM carmis
 			WHERE goods_id=$1 AND status=1 AND deleted_at IS NULL
-			ORDER BY id FOR UPDATE SKIP LOCKED LIMIT $2`, goodsID, amount)
+			  AND (reserved_order_id=$3 OR reserved_order_id IS NULL)
+			ORDER BY CASE WHEN reserved_order_id=$3 THEN 0 ELSE 1 END, id
+			FOR UPDATE SKIP LOCKED LIMIT $2`, goodsID, amount, id)
 		if err != nil {
 			return false, err
 		}
@@ -404,15 +459,20 @@ func (db *DB) Complete(ctx context.Context, sn string, paid order.Cents, tradeNo
 			if err != nil {
 				return false, err
 			}
-			return false, tx.Commit(ctx)
+			if err = tx.Commit(ctx); err != nil {
+				return false, err
+			}
+			return false, RuleError{Msg: "库存不足"}
 		}
 		var lines []string
 		for _, c := range cards {
 			lines = append(lines, c.text)
 			if c.loop == 0 {
-				if _, err = tx.Exec(ctx, `UPDATE carmis SET status=2, updated_at=now() WHERE id=$1`, c.id); err != nil {
+				if _, err = tx.Exec(ctx, `UPDATE carmis SET status=2, reserved_order_id=NULL, updated_at=now() WHERE id=$1`, c.id); err != nil {
 					return false, err
 				}
+			} else if _, err = tx.Exec(ctx, `UPDATE carmis SET reserved_order_id=NULL, updated_at=now() WHERE id=$1`, c.id); err != nil {
+				return false, err
 			}
 		}
 		_, err = tx.Exec(ctx, `UPDATE orders SET status=4, info=$2, trade_no=$3, updated_at=now() WHERE id=$1`, id, strings.Join(lines, "\n"), tradeNo)
@@ -424,7 +484,6 @@ func (db *DB) Complete(ctx context.Context, sn string, paid order.Cents, tradeNo
 		if err != nil {
 			return false, err
 		}
-		_, _ = tx.Exec(ctx, `UPDATE goods SET in_stock=GREATEST(in_stock-$2,0), updated_at=now() WHERE id=$1`, goodsID, amount)
 	}
 	_, _ = tx.Exec(ctx, `UPDATE goods SET sales_volume=COALESCE(sales_volume,0)+$2, updated_at=now() WHERE id=$1`, goodsID, amount)
 	return false, tx.Commit(ctx)
@@ -454,13 +513,23 @@ func (db *DB) ExpireDue(ctx context.Context, minutes int) error {
 		if err != nil {
 			return err
 		}
-		tag, err := tx.Exec(ctx, `UPDATE orders SET status=-1, coupon_ret_back=1, updated_at=now() WHERE id=$1 AND status=1`, r.id)
+		tag, err := tx.Exec(ctx, `
+			UPDATE orders SET status=-1, coupon_ret_back=1,
+				actual_price=actual_price+coupon_discount_price,
+				coupon_discount_price=0, updated_at=now()
+			WHERE id=$1 AND status=1`, r.id)
 		if err != nil {
 			tx.Rollback(ctx)
 			return err
 		}
-		if tag.RowsAffected() == 1 && r.coupon > 0 {
-			_, _ = tx.Exec(ctx, `UPDATE coupons SET ret=ret+1, updated_at=now() WHERE id=$1`, r.coupon)
+		if tag.RowsAffected() == 1 {
+			if r.coupon > 0 {
+				_, _ = tx.Exec(ctx, `UPDATE coupons SET ret=ret+1, updated_at=now() WHERE id=$1`, r.coupon)
+			}
+			_, _ = tx.Exec(ctx, `UPDATE carmis SET reserved_order_id=NULL, updated_at=now() WHERE reserved_order_id=$1`, r.id)
+			_, _ = tx.Exec(ctx, `
+				UPDATE goods g SET in_stock=g.in_stock+o.buy_amount, updated_at=now()
+				FROM orders o WHERE o.id=$1 AND g.id=o.goods_id AND o.type=2`, r.id)
 		}
 		if err = tx.Commit(ctx); err != nil {
 			return err

@@ -35,9 +35,14 @@
 {{template "head" .}}
 <h1>系统设置</h1>
 <form method="post" action="/admin/settings">
-{{range .Tabs}}
-<section class="card">
-<h2>{{.Name}}</h2>
+<div class="seg" role="tablist">
+{{range $i, $tab := .Tabs}}
+<button type="button" class="seg-btn{{if eq $i 0}} is-on{{end}}" role="tab" data-tab="set-{{$i}}" aria-selected="{{if eq $i 0}}true{{else}}false{{end}}">{{$tab.Name}}</button>
+{{end}}
+</div>
+{{range $i, $tab := .Tabs}}
+<section class="card pane-panel{{if eq $i 0}} is-on{{end}}" id="set-{{$i}}" role="tabpanel">
+<h2 class="sr">{{$tab.Name}}</h2>
 {{range .Fields}}
 {{$f := .}}
 <div class="field">

@@ -14,8 +14,16 @@
     <div class="layui-row">
         <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
             <div class="header-box">
-                <a href="/"><div class="info">{{.Site.TextLogo}}</div></a>
-                <div class="query layui-hide-xs"><a href="/order-search"><span>订单查询</span></a></div>
+                <a href="/">
+                    {{if .Site.Logo}}<img src="{{.Site.Logo}}" alt="">{{end}}
+                    <div class="info">{{.Site.TextLogo}}</div>
+                </a>
+                <div class="query layui-hide-xs">
+                    <a href="/order-search">
+                        <svg t="1602923269232" class="icon" viewBox="0 0 1024 1024" width="20" height="20" aria-hidden="true"><path d="M965.6 447.2 752 447.2c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l213.6 0c14.4 0 26.4 12 26.4 26.4C992.8 435.2 980.8 447.2 965.6 447.2zM965.6 233.6 699.2 233.6c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l267.2 0c14.4 0 26.4 12 26.4 26.4C992.8 221.6 980.8 233.6 965.6 233.6zM606.4 623.2l156.8 156.8c21.6 21.6 21.6 56.8 0 78.4-21.6 21.6-56.8 21.6-78.4 0L528 701.6c-16-16-20-39.2-12-59.2-51.2 44-117.6 72-190.4 72-162.4 0-293.6-131.2-293.6-293.6s131.2-293.6 293.6-293.6 293.6 131.2 293.6 293.6c0 72.8-28 139.2-72 190.4C567.2 603.2 590.4 607.2 606.4 623.2zM324.8 233.6c-103.2 0-187.2 84-187.2 187.2s84 187.2 187.2 187.2S512 523.2 512 420 428 233.6 324.8 233.6zM805.6 607.2l160 0c14.4 0 26.4 12 26.4 26.4 0 14.4-12 26.4-26.4 26.4l-160 0c-14.4 0-26.4-12-26.4-26.4C779.2 619.2 791.2 607.2 805.6 607.2z" fill="#ffffff"></path></svg>
+                        <span>订单查询</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -31,10 +39,33 @@
         <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
             <div class="main-box">
                 <div class="title"><span>选择分类</span></div>
-                <div class="cate"></div>
+                <div class="cate">
+                    {{range $i, $g := .Groups}}
+                    <div class="cate-box{{if eq $i 0}} cate-box-select{{end}}" data-key="{{$i}}">
+                        <p>{{$g.Name}}</p>
+                        <div>商品数量：{{len $g.Goods}}</div>
+                    </div>
+                    {{end}}
+                </div>
                 <div class="goods">
                     <p class="title-2"><span>选择商品</span></p>
-                    <div class="goods-list"></div>
+                    <div class="goods-list">
+                        {{range $i, $g := .Groups}}
+                        {{range $g.Goods}}
+                        <a class="goods-box" data-key="{{$i}}" href="{{if gt .InStock 0}}/buy/{{.ID}}{{else}}javascript:void(0){{end}}" style="{{if gt $i 0}}display:none;{{end}}{{if le .InStock 0}}cursor:not-allowed;{{end}}">
+                            <div class="picture"><img src="{{if .Picture}}{{.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" alt=""></div>
+                            <div class="msg">
+                                <div class="goods-name">{{.Name}}</div>
+                                <div class="goods-price">￥{{yuan .Actual}}{{range wholesaleRows .Wholesale}}<div>满{{index . 0}}个 单价{{index . 1}}元/件</div>{{end}}</div>
+                                <div class="goods-num">
+                                    <div><p style="width: {{stockPercent .InStock .Sales}}%;"></p></div>
+                                    <span>剩余{{.InStock}}件</span>
+                                </div>
+                            </div>
+                        </a>
+                        {{end}}
+                        {{end}}
+                    </div>
                 </div>
             </div>
         </div>
@@ -46,22 +77,18 @@
         <p>Powered by <a href="/">Dufaka-Go</a></p>
     </div></div>
 </div>
-<div class="query-m"><a href="/order-search"><span>订单查询</span></a></div>
-<script id="cateTpl" type="text/html">
-    <div class="cate-box" data-key="<< d.key >>"><p><< d.gp_name >></p><div>商品数量：<< d.goods.length >></div></div>
+<div class="query-m"><a href="/order-search"><svg viewBox="0 0 1024 1024" width="30" height="30" aria-hidden="true"><path d="M320.512 428.032h382.976v61.44H320.512zM320.512 616.448h320.512v61.44H320.512z" fill="#ffffff"></path><path d="M802.816 937.984H221.184l-40.96-40.96V126.976l40.96-40.96h346.112l26.624 10.24 137.216 117.76 98.304 79.872 15.36 31.744v571.392l-41.984 40.96z m-540.672-81.92h500.736V345.088L677.888 276.48 550.912 167.936H262.144v688.128z" fill="#ffffff"></path></svg><span>查单</span></a></div>
+<script>
+document.querySelectorAll(".cate-box").forEach(function (box) {
+  box.addEventListener("click", function () {
+    var key = box.getAttribute("data-key");
+    document.querySelectorAll(".cate-box").forEach(function (item) {
+      item.classList.toggle("cate-box-select", item === box);
+    });
+    document.querySelectorAll(".goods-box").forEach(function (card) {
+      card.style.display = card.getAttribute("data-key") === key ? "" : "none";
+    });
+  });
+});
 </script>
-<script id="goodsTpl" type="text/html">
-    <a href="<<# if(d.in_stock > 0){ >>/buy/<< d.id >><<# } else { >>javascript:void(0);<<# }; >>" class="goods-box">
-        <div class="picture"><img src="<< d.picture >>" alt=""></div>
-        <div class="msg">
-            <div class="goods-name"><< d.gd_name >></div>
-            <div class="goods-price">￥<< d.actual_price >></div>
-            <div class="goods-num"><div><p style="width: << d.proportion >>%;"></p></div><span>剩余<< d.in_stock >>件</span></div>
-        </div>
-    </a>
-</script>
-<script>let title = "站点公告"; let goodsMsg = {{lunaGoods .Groups}};</script>
-<script src="/assets/luna/layui/layui.js"></script>
-<script src="/assets/luna/js/jquery-3.4.1.min.js"></script>
-<script src="/assets/luna/main.js"></script>
 </body></html>{{end}}

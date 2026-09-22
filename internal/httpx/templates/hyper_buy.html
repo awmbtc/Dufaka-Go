@@ -21,9 +21,15 @@
 <div class="form-group"><label>购买数量</label><input class="form-control" type="number" name="by_amount" min="1" value="1"></div>
 <div class="form-group"><label>优惠码</label><input class="form-control" name="coupon_code"></div>
 {{if .Site.SearchPwd}}<div class="form-group"><label>查询密码</label><input class="form-control" name="search_pwd" required></div>{{end}}
-<div class="form-group"><label>支付方式</label>
-{{range $i, $p := .Pays}}<div class="form-check"><label class="form-check-label"><input class="form-check-input" type="radio" name="payway" value="{{$p.ID}}" {{if eq $i 0}}checked{{end}}> {{$p.Name}}</label></div>{{end}}
+<div class="form-group"><div class="buy-title">支付方式</div>
+<input type="hidden" name="payway" value="{{if .Pays}}{{(index .Pays 0).ID}}{{else}}0{{end}}">
+<div class="pay-grid">
+{{range $i, $p := .Pays}}<div class="btn pay-type{{if eq $i 0}} active{{end}}" data-type="{{$p.Check}}" data-id="{{$p.ID}}" data-name="{{$p.Name}}"></div>{{end}}
 </div>
+</div>
+{{if eq .Good.Type 2}}{{range extraInputs .Good.Other}}
+<div class="form-group"><div class="buy-title">{{.Label}}</div><input class="form-control" type="text" name="{{.Field}}" {{if .Required}}required{{end}}></div>
+{{end}}{{end}}
 <button class="btn btn-danger" type="submit">下单</button>
 </form>
 </div></div>
@@ -35,4 +41,5 @@
 <script src="/assets/hyper/js/jquery-3.4.1.min.js"></script>
 <script src="/assets/hyper/js/vendor.min.js"></script>
 <script src="/assets/hyper/js/app.min.js"></script>
+<script src="/assets/hyper/js/hyper.js"></script>
 </body></html>{{end}}

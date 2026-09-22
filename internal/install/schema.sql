@@ -41,6 +41,7 @@ CREATE TABLE carmis (
     status      smallint NOT NULL DEFAULT 1,
     is_loop     smallint NOT NULL DEFAULT 0,
     carmi       text NOT NULL,
+    reserved_order_id bigint,
     created_at  timestamptz,
     updated_at  timestamptz,
     deleted_at  timestamptz

@@ -10,5 +10,18 @@
 <p class="price"><span class="price-sign">￥</span><span class="price-num">{{yuan .Order.Actual}}</span></p>
 <img alt="支付二维码" src="data:image/png;base64,{{.QR}}">
 <p>请使用微信扫一扫完成支付。</p>
+<p id="pay-state"></p>
 </div></div></div></div>
+<script>
+(function () {
+  var sn = "{{.Order.SN}}";
+  var state = document.getElementById("pay-state");
+  var timer = setInterval(function () {
+    fetch("/check-order-status/" + encodeURIComponent(sn)).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.code === 400001) { clearInterval(timer); if (state) state.textContent = "订单已过期"; setTimeout(function () { location.href = "/"; }, 1200); }
+      if (res.code === 200) { clearInterval(timer); if (state) state.textContent = "支付成功，正在打开订单"; location.href = "/detail-order-sn/" + encodeURIComponent(sn); }
+    }).catch(function () {});
+  }, 5000);
+})();
+</script>
 </body></html>{{end}}

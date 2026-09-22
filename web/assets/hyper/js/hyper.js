@@ -58,7 +58,8 @@ $(function() {
 	// 设置公告
 	let expiration = localStorage.announcement;
 	if (new Date().getTime() > expiration || expiration == null) {
-		$('#notice-modal').modal();
+		if (typeof window.openNotice === "function") window.openNotice();
+		else $("#notice-modal").modal();
 		let setTime = new Date().getTime() + (1 * 60 * 60 * 1000);
 		localStorage.setItem("announcement",setTime);
 	}

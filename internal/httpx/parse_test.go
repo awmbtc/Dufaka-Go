@@ -31,11 +31,24 @@ func TestTemplatesParse(t *testing.T) {
 			if err := app.render(&buf, name, data); err != nil {
 				t.Fatalf("%s %s: %v", theme, name, err)
 			}
-			if theme == "luna" && name == "home.html" && !bytes.Contains(buf.Bytes(), []byte("goods-list")) {
-				t.Fatalf("luna home missing goods list")
+			if bytes.Contains(buf.Bytes(), []byte("<<")) {
+				t.Fatalf("%s %s leaked a template marker", theme, name)
 			}
-			if theme == "hyper" && name == "home.html" && !bytes.Contains(buf.Bytes(), []byte("home-card")) {
-				t.Fatalf("hyper home missing card")
+			if theme == "luna" && name == "home.html" {
+				if !bytes.Contains(buf.Bytes(), []byte("支付测试")) || !bytes.Contains(buf.Bytes(), []byte("cate-box")) {
+					t.Fatalf("luna home did not render the category and product")
+				}
+			}
+			if theme == "luna" && name == "buy.html" && !bytes.Contains(buf.Bytes(), []byte("微信扫码")) {
+				t.Fatalf("luna buy hid the pay method name")
+			}
+			if theme == "hyper" && name == "home.html" {
+				if !bytes.Contains(buf.Bytes(), []byte("home-card")) || !bytes.Contains(buf.Bytes(), []byte(`id="group-1"`)) {
+					t.Fatalf("hyper home missing a category pane")
+				}
+			}
+			if name == "qrpay.html" && !bytes.Contains(buf.Bytes(), []byte("check-order-status")) {
+				t.Fatalf("%s qr page does not poll payment status", theme)
 			}
 			if bytes.Contains(buf.Bytes(), []byte("独角")) {
 				t.Fatalf("%s %s still contains old brand", theme, name)

@@ -6,6 +6,20 @@
 <div class="container"><div class="card"><div class="card-body text-center">
 <h3>扫码支付</h3><p>{{.Pay.Name}} · {{.Order.SN}}</p><p>¥{{yuan .Order.Actual}}</p>
 <img alt="支付二维码" src="data:image/png;base64,{{.QR}}">
+<p id="pay-state"></p>
 </div></div></div>
 <footer class="hyper-footer"><div class="container">Powered by <a href="/">Dufaka-Go</a></div></footer>
-</div></div></body></html>{{end}}
+</div></div>
+<script>
+(function () {
+  var sn = "{{.Order.SN}}";
+  var state = document.getElementById("pay-state");
+  var timer = setInterval(function () {
+    fetch("/check-order-status/" + encodeURIComponent(sn)).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.code === 400001) { clearInterval(timer); if (state) state.textContent = "订单已过期"; setTimeout(function () { location.href = "/"; }, 1200); }
+      if (res.code === 200) { clearInterval(timer); if (state) state.textContent = "支付成功，正在打开订单"; location.href = "/detail-order-sn/" + encodeURIComponent(sn); }
+    }).catch(function () {});
+  }, 5000);
+})();
+</script>
+</body></html>{{end}}

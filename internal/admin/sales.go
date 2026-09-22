@@ -423,6 +423,7 @@ func (s *Server) orderSave(w http.ResponseWriter, r *http.Request, u session) {
 		s.fail(w, u, "orders", dbErr(err))
 		return
 	}
+	prevStatus := row.Status
 	row.Title = strings.TrimSpace(r.FormValue("title"))
 	row.Info = normalizeNL(r.FormValue("info"))
 	row.Pwd = strings.TrimSpace(r.FormValue("search_pwd"))
@@ -438,6 +439,10 @@ func (s *Server) orderSave(w http.ResponseWriter, r *http.Request, u session) {
 	}
 	if !validOrderStatus(row.Status) {
 		s.render(w, http.StatusBadRequest, "order_detail", orderPage{View: View{Title: "订单详情", User: u.Name, Nav: "orders", Err: "订单状态不正确"}, Row: row, Action: action})
+		return
+	}
+	if (row.Status == 2 || row.Status == 4) && row.Status != prevStatus && prevStatus != 2 && prevStatus != 3 && prevStatus != 4 {
+		s.render(w, http.StatusBadRequest, "order_detail", orderPage{View: View{Title: "订单详情", User: u.Name, Nav: "orders", Err: "不能直接改成已支付或已完成。未发货的卡不能标成已售。"}, Row: row, Action: action})
 		return
 	}
 	n, err := execCount(s, r, `UPDATE orders SET title=$1, info=$2, search_pwd=$3, status=$4, updated_at=now() WHERE id=$5 AND deleted_at IS NULL`, row.Title, row.Info, row.Pwd, row.Status, id)
