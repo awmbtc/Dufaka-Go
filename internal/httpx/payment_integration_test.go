@@ -150,3 +150,48 @@ func TestWeChatSignedNotificationIntegration(t *testing.T) {
 		t.Fatal("accepted unsigned notification")
 	}
 }
+
+// Exercise the actual HTTP cookie round trip before any payment is made.
+func TestUnpaidBrowserSearchIntegration(t *testing.T) {
+	t.Setenv("DUFAKA_SESSION_KEY", "browser-search-test-key")
+	app, _ := auditOrder(t)
+	_, err := app.live().Pool.Exec(context.Background(), `INSERT INTO goods(id,group_id,gd_name,gd_description,gd_keywords,actual_price,in_stock,type) VALUES(2,1,'Pending browser order','','',10,3,2)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cookie *http.Cookie
+	for i := 0; i < 2; i++ {
+		req := httptest.NewRequest("POST", "/create-order", strings.NewReader("gid=2&payway=1&by_amount=1&email=browser%40example.com&search_pwd=query-secret"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		if cookie != nil {
+			req.AddCookie(cookie)
+		}
+		created := httptest.NewRecorder()
+		app.create(created, req)
+		if created.Code != http.StatusFound {
+			t.Fatalf("create failed: %s", created.Body.String())
+		}
+		sn := strings.TrimPrefix(created.Header().Get("Location"), "/bill/")
+		cookies := created.Result().Cookies()
+		if len(cookies) != 1 {
+			t.Fatal("missing browser order cookie")
+		}
+		cookie = cookies[0]
+		// AddCookie serializes the response cookie as a real browser request header.
+		search := httptest.NewRequest("POST", "/search-order-by-browser", nil)
+		search.AddCookie(cookie)
+		found := httptest.NewRecorder()
+		app.searchBrowser(found, search)
+		if found.Code != http.StatusOK || !strings.Contains(found.Body.String(), sn) {
+			t.Fatalf("unpaid order missing: %s", found.Body.String())
+		}
+		parsed, err := search.Cookie("dujiaoka_orders")
+		if err != nil || len(browserOrders(parsed.Value)) != i+1 {
+			t.Fatal("browser lost previous order")
+		}
+		order, err := app.live().OrderBySN(context.Background(), sn)
+		if err != nil || order.Status != 1 {
+			t.Fatal("expected unpaid order")
+		}
+	}
+}
