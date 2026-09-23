@@ -26,6 +26,11 @@ body, .wrapper, .content-page {
     align-items: center;
     justify-content: space-between;
 }
+.site-mark {
+    height: 36px;
+    width: auto;
+    vertical-align: middle;
+}
 .logo-title {
     font-size: 24px;
     font-weight: 700;

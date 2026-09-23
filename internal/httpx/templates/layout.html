@@ -6,6 +6,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} | {{.Site.Title}}</title>
+    <link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+    <style>.navbar-brand .site-mark{margin-right:10px}</style>
     <meta name="Keywords" content="{{.Site.Keywords}}">
     <meta name="Description" content="{{.Site.Description}}">
     {{if eq .Site.Template "hyper"}}
@@ -21,7 +23,7 @@
     <link rel="stylesheet" href="/assets/unicorn/css/common.css">
     <link rel="stylesheet" href="/assets/unicorn/css/index.css">
     {{end}}
-</head>
+<link rel="stylesheet" href="/assets/style/storefront.css"></head>
 <body>
 <header class="header sticky-top">
     <div class="container">
@@ -37,7 +39,7 @@
                 <div class="header-right clearfix">
                     <nav class="navbar navbar-expand-lg navbar-light">
                         <div class="container-fluid">
-                            <a class="navbar-brand" href="/">{{.Site.TextLogo}}</a>
+                            <a class="navbar-brand" href="/">{{template "mark" .}}{{.Site.TextLogo}}</a>
                             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor">
                                 <span class="navbar-toggler-icon"></span>
                             </button>
@@ -59,8 +61,8 @@
 <footer class="footer p-3">
     <div class="row">
         <div class="col-12 text-center">
-            <div class="author">Powered by：<a href="/">Dufaka-Go</a></div>
-            <div class="custom">{{.Site.Footer}}</div>
+            <div class="author">{{template "powered"}}</div>
+            <div class="custom">{{rich .Site.Footer}}</div>
         </div>
     </div>
 </footer>

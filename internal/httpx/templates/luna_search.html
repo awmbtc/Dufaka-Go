@@ -1,22 +1,88 @@
 {{define "luna_search.html"}}<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
 <title>订单查询 | {{.Site.Title}}</title>
-<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"></head>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
+<link rel="stylesheet" href="/assets/luna/main.css">
+<link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/style/storefront.css"></head>
 <body>
 <div class="background"></div>
-<div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="header-box"><a href="/"><div class="info">{{.Site.TextLogo}}</div></a></div></div></div></div>
-<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="main-box">
-<div class="title"><span>订单查询</span></div>
-<form class="layui-form" method="post" action="/search-order-by-sn">
-<div class="layui-form-item"><label class="layui-form-label">订单号</label><div class="layui-input-block"><input class="layui-input" name="order_sn"></div></div>
-<button class="layui-btn" type="submit">查询</button>
-</form>
-<form class="layui-form" method="post" action="/search-order-by-email">
-<div class="layui-form-item"><label class="layui-form-label">邮箱</label><div class="layui-input-block"><input class="layui-input" name="email"></div></div>
-<div class="layui-form-item"><label class="layui-form-label">查询密码</label><div class="layui-input-block"><input class="layui-input" name="search_pwd"></div></div>
-<button class="layui-btn" type="submit">查询</button>
-</form>
-<form method="post" action="/search-order-by-browser"><button class="layui-btn layui-btn-primary" type="submit">查询本机订单</button></form>
-</div></div></div></div>
-<div class="footer"><p>Powered by <a href="/">Dufaka-Go</a></p></div>
-</body></html>{{end}}
+<div class="header">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+            <div class="header-box">
+                <a href="/">{{template "mark" .}}<div class="info">{{.Site.TextLogo}}</div></a>
+                <div class="query layui-hide-xs"><a href="/order-search"><svg t="1602923269232" class="icon" viewBox="0 0 1024 1024" width="20" height="20" aria-hidden="true"><path d="M965.6 447.2 752 447.2c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l213.6 0c14.4 0 26.4 12 26.4 26.4C992.8 435.2 980.8 447.2 965.6 447.2zM965.6 233.6 699.2 233.6c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l267.2 0c14.4 0 26.4 12 26.4 26.4C992.8 221.6 980.8 233.6 965.6 233.6zM606.4 623.2l156.8 156.8c21.6 21.6 21.6 56.8 0 78.4-21.6 21.6-56.8 21.6-78.4 0L528 701.6c-16-16-20-39.2-12-59.2-51.2 44-117.6 72-190.4 72-162.4 0-293.6-131.2-293.6-293.6s131.2-293.6 293.6-293.6 293.6 131.2 293.6 293.6c0 72.8-28 139.2-72 190.4C567.2 603.2 590.4 607.2 606.4 623.2zM324.8 233.6c-103.2 0-187.2 84-187.2 187.2s84 187.2 187.2 187.2S512 523.2 512 420 428 233.6 324.8 233.6zM805.6 607.2l160 0c14.4 0 26.4 12 26.4 26.4 0 14.4-12 26.4-26.4 26.4l-160 0c-14.4 0-26.4-12-26.4-26.4C779.2 619.2 791.2 607.2 805.6 607.2z" fill="#ffffff"></path></svg><span>订单查询</span></a></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="main">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+            <div class="main-box">
+                <div class="pay-title">订单查询</div>
+                <div class="layui-card-body">
+                    <div class="layui-tab">
+                        <ul class="layui-tab-title">
+                            <li class="layui-this">订单号查询</li>
+                            <li>邮箱查询</li>
+                            <li>浏览器查询</li>
+                        </ul>
+                        <div class="layui-tab-content" style="text-align:center">
+                            <div class="layui-tab-item layui-show">
+                                <form action="/search-order-by-sn" method="post">
+                                    <div class="entry">
+                                        <span class="l-msg">订单号：</span>
+                                        <label class="input"><input type="text" name="order_sn" required placeholder="请输入订单号" autocomplete="off"></label>
+                                    </div>
+                                    <div class="btn">{{if .Site.SearchPwd}}<label class="query-password">查询密码<input type="password" class="form-control layui-input" name="search_pwd" required></label>{{end}}<button type="submit">立即查询</button></div>
+                                </form>
+                            </div>
+                            <div class="layui-tab-item">
+                                <form action="/search-order-by-email" method="post">
+                                    <div class="entry">
+                                        <span class="l-msg">邮箱：</span>
+                                        <label class="input"><input type="email" name="email" required placeholder="请输入邮箱" autocomplete="off"></label>
+                                    </div>
+                                    {{if .Site.SearchPwd}}
+                                    <div class="entry">
+                                        <span class="l-msg">查询密码：</span>
+                                        <label class="input"><input type="password" name="search_pwd" required placeholder="请输入查询密码" autocomplete="off"></label>
+                                    </div>
+                                    {{end}}
+                                    <div class="btn"><button type="submit">立即查询</button></div>
+                                </form>
+                            </div>
+                            <div class="layui-tab-item">
+                                <p style="color:#737373;margin:12px 0 4px">查询本机浏览器下过的订单</p>
+                                <form action="/search-order-by-browser" method="post">
+                                    <div class="btn"><button type="submit">查询本机订单</button></div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="footer"><p>{{template "powered"}}</p></div>
+<div class="query-m"><a href="/order-search"><svg viewBox="0 0 1024 1024" width="22" height="22" aria-hidden="true"><path d="M320.512 428.032h382.976v61.44H320.512zM320.512 616.448h320.512v61.44H320.512z" fill="#ffffff"></path><path d="M802.816 937.984H221.184l-40.96-40.96V126.976l40.96-40.96h346.112l26.624 10.24 137.216 117.76 98.304 79.872 15.36 31.744v571.392l-41.984 40.96z m-540.672-81.92h500.736V345.088L677.888 276.48 550.912 167.936H262.144v688.128z" fill="#ffffff"></path></svg><span>查单</span></a></div>
+<script>
+document.querySelectorAll(".layui-tab-title li").forEach(function (tab, index) {
+  tab.addEventListener("click", function () {
+    var tabs = document.querySelectorAll(".layui-tab-title li");
+    var panes = document.querySelectorAll(".layui-tab-item");
+    tabs.forEach(function (item) { item.classList.remove("layui-this"); });
+    panes.forEach(function (item) { item.classList.remove("layui-show"); });
+    tab.classList.add("layui-this");
+    panes[index].classList.add("layui-show");
+  });
+});
+</script>
+</body>
+</html>{{end}}

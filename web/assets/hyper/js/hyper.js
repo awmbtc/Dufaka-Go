@@ -33,9 +33,11 @@ $(function() {
 	$('.pay-type').each(function () {
 		let t = $(this), type = t.data('type'), name = t.data('name');
 		if (paySvgArr[type] !== undefined) {
-			t.append(paySvgArr[type] + ' ' + name);
+			t.append(paySvgArr[type]);
+ t.append(document.createTextNode(' ' + name));
 		} else {
-			t.append(otherSvg + ' ' + name);
+			t.append(otherSvg);
+ t.append(document.createTextNode(' ' + name));
 		}
 	}).click(function () {
 		$('.pay-type').removeClass('active')

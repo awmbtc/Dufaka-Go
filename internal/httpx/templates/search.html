@@ -8,7 +8,7 @@
                     <form method="post" action="/search-order-by-sn" class="mb-3">
                         <label class="col-form-label">订单号</label>
                         <input class="form-control form-control-sm" name="order_sn">
-                        <button class="btn btn-primary mt-2">查询</button>
+                        {{if .Site.SearchPwd}}<label class="query-password">查询密码<input type="password" class="form-control layui-input" name="search_pwd" required></label>{{end}}<button class="btn btn-primary mt-2">查询</button>
                     </form>
                     <form method="post" action="/search-order-by-email" class="mb-3">
                         <label class="col-form-label">邮箱</label>

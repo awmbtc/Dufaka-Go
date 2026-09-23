@@ -1,17 +1,12 @@
 {{define "orders.html"}}{{template "head" .}}
-<section class="main-container">
-    <div class="container">
-        {{range .Orders}}
-        <div class="card m-3">
-            <div class="card-body">
-                <h5>订单号：{{.SN}}</h5>
-                <div class="mb-1">商品：{{.Title}} × {{.Amount}}</div>
-                <div class="mb-1">金额：¥{{yuan .Actual}}</div>
-                <div class="mb-1">状态：{{status .Status}}</div>
-                <pre class="mb-0">{{.Info}}</pre>
-            </div>
-        </div>
-        {{end}}
-    </div>
-</section>
-{{template "foot" .}}{{end}}
+<section class="main-container"><div class="container"><div class="row justify-content-center">
+{{range .Orders}}<div class="col-md-8"><div class="card mt-3"><div class="row">
+<div class="col-12 col-md-6"><div class="card-body">
+<h5>订单号：{{.SN}}</h5><p>商品：{{.Title}} × {{.Amount}}</p><p>邮箱：{{.Email}}</p>
+<p>下单时间：{{.Created.Format "2006-01-02 15:04:05"}}</p><p>金额：¥{{yuan .Actual}}</p><p>状态：{{status .Status}}</p>
+{{if eq .Status 1}}<a class="btn btn-primary" href="/bill/{{.SN}}">继续支付</a>{{end}}
+</div></div><div class="col-12 col-md-6"><div class="card-body order-delivery">
+<h6>订单信息</h6><textarea class="form-control" rows="5" readonly aria-label="订单信息">{{.Info}}</textarea>
+{{if .Info}}<button class="btn btn-primary mt-2" type="button" data-copy-order>复制</button>{{end}}
+</div></div></div></div></div>{{else}}<p>未找到订单</p>{{end}}
+</div></div></section>{{template "copy-script" .}}{{template "foot" .}}{{end}}

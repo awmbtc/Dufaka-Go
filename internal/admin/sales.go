@@ -276,8 +276,8 @@ type orderRow struct {
 
 type ordersPage struct {
 	View
-	Rows                            []orderRow
-	SN, Title, Email, Trade, Status string
+	Rows                                  []orderRow
+	SN, FilterTitle, Email, Trade, Status string
 }
 
 type orderPage struct {
@@ -351,7 +351,7 @@ func (s *Server) ordersList(w http.ResponseWriter, r *http.Request, u session) {
 		list = list[:limit]
 	}
 	prev, next := pageLinks(r, page, hasNext)
-	p := ordersPage{View: s.shell(u, "订单列表", "orders", r), Rows: list, SN: sn, Title: title, Email: email, Trade: trade, Status: status}
+	p := ordersPage{View: s.shell(u, "订单列表", "orders", r), Rows: list, SN: sn, FilterTitle: title, Email: email, Trade: trade, Status: status}
 	p.Prev, p.Next = prev, next
 	s.render(w, http.StatusOK, "orders", p)
 }
@@ -441,11 +441,13 @@ func (s *Server) orderSave(w http.ResponseWriter, r *http.Request, u session) {
 		s.render(w, http.StatusBadRequest, "order_detail", orderPage{View: View{Title: "订单详情", User: u.Name, Nav: "orders", Err: "订单状态不正确"}, Row: row, Action: action})
 		return
 	}
-	if (row.Status == 2 || row.Status == 4) && row.Status != prevStatus && prevStatus != 2 && prevStatus != 3 && prevStatus != 4 {
-		s.render(w, http.StatusBadRequest, "order_detail", orderPage{View: View{Title: "订单详情", User: u.Name, Nav: "orders", Err: "不能直接改成已支付或已完成。未发货的卡不能标成已售。"}, Row: row, Action: action})
+	// Paid orders may progress through fulfillment; payment/expiry transitions belong to the ledger.
+	if row.Status != prevStatus && !((prevStatus == 2 || prevStatus == 3 || ((prevStatus == 5 || prevStatus == 6) && row.Trade != "")) && (row.Status == 2 || row.Status == 3 || row.Status == 4 || row.Status == 5 || row.Status == 6)) {
+		s.render(w, http.StatusBadRequest, "order_detail", orderPage{View: View{Title: "订单详情", User: u.Name, Nav: "orders", Err: "该状态不能手动变更；付款与过期由系统处理，已付款订单可更新发货进度。"}, Row: row, Action: action})
 		return
 	}
-	n, err := execCount(s, r, `UPDATE orders SET title=$1, info=$2, search_pwd=$3, status=$4, updated_at=now() WHERE id=$5 AND deleted_at IS NULL`, row.Title, row.Info, row.Pwd, row.Status, id)
+
+	n, err := execCount(s, r, `UPDATE orders SET title=$1, info=$2, search_pwd=$3, status=$4, updated_at=now() WHERE id=$5 AND status=$6 AND deleted_at IS NULL`, row.Title, row.Info, row.Pwd, row.Status, id, prevStatus)
 	if err != nil || n == 0 {
 		msg := "记录不存在"
 		if err != nil {

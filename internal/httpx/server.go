@@ -1,12 +1,14 @@
 package httpx
 
 import (
+	"bytes"
 	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"html/template"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -32,6 +34,7 @@ type App struct {
 	tpl        *template.Template
 	base       string
 	configPath string
+	wallet     pay.Wallet
 }
 
 func New(db *store.DB, base, configPath string) (*App, error) {
@@ -57,6 +60,7 @@ func New(db *store.DB, base, configPath string) (*App, error) {
 				return "未知"
 			}
 		},
+		"rich":          rich,
 		"lunaGoods":     lunaGoods,
 		"stockPercent":  stockPercent,
 		"wholesaleRows": wholesaleRows,
@@ -65,7 +69,25 @@ func New(db *store.DB, base, configPath string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &App{db: db, tpl: tpl, base: strings.TrimRight(base, "/"), configPath: configPath}, nil
+	merchant := os.Getenv("WALLET_MERCHANT_ID")
+	if merchant == "" {
+		merchant = "shop"
+	}
+	return &App{
+		db: db, tpl: tpl, base: strings.TrimRight(base, "/"), configPath: configPath,
+		wallet: pay.Wallet{
+			Base:       envOr("WALLET_BASE_URL", "https://cldx-wallet-zh432gkopa-de.a.run.app"),
+			MerchantID: merchant,
+			Secret:     os.Getenv("WALLET_MERCHANT_SECRET"),
+		},
+	}, nil
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
 
 // Live returns the database connected after install or startup.
@@ -92,7 +114,7 @@ func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
 	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/assets/style/favicon.ico", http.StatusFound)
+		http.Redirect(w, r, "/assets/brand/favicon.ico", http.StatusFound)
 	})
 	mux.HandleFunc("GET /{$}", a.home)
 	mux.HandleFunc("GET /buy/{id}", a.buy)
@@ -106,6 +128,8 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("POST /search-order-by-browser", a.searchBrowser)
 	mux.HandleFunc("GET /pay-gateway/{handle}/{payway}/{sn}", a.gateway)
 	mux.HandleFunc("GET /pay/{channel}/{payway}/{sn}", a.gateway)
+	mux.HandleFunc("GET /cldx/pay", a.cldxLaunch)
+	mux.HandleFunc("GET /cldx/{id}", a.cldxLanding)
 	mux.HandleFunc("POST /pay/wepay/notify_url", a.wechatNotify)
 	mux.HandleFunc("GET /install", a.installPage)
 	mux.HandleFunc("POST /install/test", a.installTest)
@@ -122,6 +146,31 @@ func (a *App) Handler() http.Handler {
 
 func (a *App) guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/admin") && r.Method != http.MethodGet && r.Method != http.MethodHead {
+			origin := r.Header.Get("Origin")
+			u, err := url.Parse(origin)
+			if r.Header.Get("Sec-Fetch-Site") == "cross-site" || (origin != "" && (err != nil || !strings.EqualFold(u.Host, r.Host) || (u.Scheme != "http" && u.Scheme != "https"))) {
+				http.Error(w, "请求来源不正确", http.StatusForbidden)
+				return
+			}
+		}
+
+		if r.URL.Query().Get("clodex_app") == "1" {
+			http.SetCookie(w, &http.Cookie{
+				Name: "clodex_app", Value: "1", Path: "/", MaxAge: 30 * 24 * 3600,
+				HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode,
+			})
+		}
+		if strings.HasPrefix(r.URL.Path, "/assets/") || r.URL.Path == "/favicon.ico" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if !a.installed(r) {
+			if saved, err := install.LoadConfig(a.configPath); err == nil && saved.DatabaseURL != "" {
+				http.Error(w, "数据库暂时不可用，请稍后重试", http.StatusServiceUnavailable)
+				return
+			}
+		}
 		if r.URL.Path == "/install" || r.URL.Path == "/install/test" || r.URL.Path == "/do-install" {
 			next.ServeHTTP(w, r)
 			return
@@ -135,10 +184,14 @@ func (a *App) guard(next http.Handler) http.Handler {
 }
 
 func (a *App) view(w http.ResponseWriter, name string, data any) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := a.render(w, name, data); err != nil {
-		http.Error(w, err.Error(), 500)
+	var buf bytes.Buffer
+	if err := a.render(&buf, name, data); err != nil {
+		http.Error(w, "页面渲染失败", 500)
+		return
 	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_, _ = w.Write(buf.Bytes())
 }
 
 func (a *App) render(w io.Writer, name string, data any) error {
@@ -166,8 +219,8 @@ func (a *App) home(w http.ResponseWriter, r *http.Request) {
 func (a *App) buy(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	g, err := a.live().Good(r.Context(), id)
-	if err != nil {
-		a.fail(w, r, err.Error())
+	if err != nil || !g.Open {
+		a.fail(w, r, "商品不存在或已下架")
 		return
 	}
 	pays, _ := a.live().Pays(r.Context(), clientKind(r))
@@ -211,8 +264,10 @@ func (a *App) bill(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, "订单已过期")
 		return
 	}
+	site := a.live().Site(r.Context())
 	p, _ := a.live().Pay(r.Context(), o.PayID)
-	a.view(w, "bill.html", map[string]any{"Title": "确认订单", "Site": a.live().Site(r.Context()), "Order": o, "Pay": p})
+	deadline := o.Created.Add(time.Duration(site.ExpireMin) * time.Minute).Unix()
+	a.view(w, "bill.html", map[string]any{"Title": "确认订单", "Site": site, "Order": o, "Pay": p, "PayDeadline": deadline})
 }
 
 func (a *App) detail(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +277,7 @@ func (a *App) detail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	site := a.live().Site(r.Context())
-	if site.SearchPwd && o.SearchPwd != "" && r.URL.Query().Get("pwd") != o.SearchPwd {
+	if site.SearchPwd && o.SearchPwd != "" && r.URL.Query().Get("pwd") != o.SearchPwd && !ownsOrder(r, o.SN) {
 		o.Info = ""
 	}
 	a.view(w, "orders.html", map[string]any{"Title": "订单详情", "Site": site, "Orders": []store.Order{o}})
@@ -235,6 +290,9 @@ func (a *App) searchPage(w http.ResponseWriter, r *http.Request) {
 func (a *App) poll(w http.ResponseWriter, r *http.Request) {
 	o, err := a.live().OrderBySN(r.Context(), r.PathValue("sn"))
 	w.Header().Set("Content-Type", "application/json")
+	if err == nil && (o.Status == 1 || o.Status == -1) {
+		o = a.syncCldxOrder(r, o)
+	}
 	if err != nil || o.Status == -1 {
 		_ = json.NewEncoder(w).Encode(map[string]any{"msg": "expired", "code": 400001})
 		return
@@ -252,7 +310,7 @@ func (a *App) poll(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) searchSN(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
-	http.Redirect(w, r, "/detail-order-sn/"+r.FormValue("order_sn"), http.StatusFound)
+	http.Redirect(w, r, "/detail-order-sn/"+url.PathEscape(r.FormValue("order_sn"))+"?pwd="+url.QueryEscape(r.FormValue("search_pwd")), http.StatusFound)
 }
 
 func (a *App) searchEmail(w http.ResponseWriter, r *http.Request) {
@@ -276,8 +334,7 @@ func (a *App) searchBrowser(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, "浏览器没有相关订单")
 		return
 	}
-	var sns []string
-	_ = json.Unmarshal([]byte(c.Value), &sns)
+	sns := browserOrders(c.Value)
 	var list []store.Order
 	for _, sn := range sns {
 		if o, err := a.live().OrderBySN(r.Context(), sn); err == nil {
@@ -297,9 +354,25 @@ func (a *App) gateway(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err.Error())
 		return
 	}
+	if o.Status != 1 {
+		http.Redirect(w, r, "/detail-order-sn/"+url.PathEscape(o.SN), http.StatusFound)
+		return
+	}
+	if !time.Now().Before(o.Created.Add(time.Duration(a.live().Site(r.Context()).ExpireMin) * time.Minute)) {
+		a.fail(w, r, "订单已过期")
+		return
+	}
 	p, err := a.live().Pay(r.Context(), o.PayID)
 	if err != nil {
 		a.fail(w, r, err.Error())
+		return
+	}
+	if p.Open != 1 {
+		a.fail(w, r, "支付方式已停用")
+		return
+	}
+	if p.Check == "cldx" {
+		a.cldxPay(w, r, o)
 		return
 	}
 	if p.Check != "wescan" {
@@ -326,7 +399,9 @@ func (a *App) gateway(w http.ResponseWriter, r *http.Request) {
 func (a *App) wechatNotify(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Resource struct {
-			Nonce, Ciphertext, AssociatedData string
+			Nonce          string `json:"nonce"`
+			Ciphertext     string `json:"ciphertext"`
+			AssociatedData string `json:"associated_data"`
 		} `json:"resource"`
 	}
 	raw, _ := readAll(r)
@@ -344,8 +419,10 @@ func (a *App) wechatNotify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var n struct {
-		OutTradeNo, TradeState, TransactionID string
-		Amount                                struct {
+		OutTradeNo    string `json:"out_trade_no"`
+		TradeState    string `json:"trade_state"`
+		TransactionID string `json:"transaction_id"`
+		Amount        struct {
 			Total int64 `json:"total"`
 		} `json:"amount"`
 	}
@@ -452,11 +529,14 @@ func clientKind(r *http.Request) int {
 func remember(w http.ResponseWriter, r *http.Request, sn string) {
 	var sns []string
 	if c, err := r.Cookie("dujiaoka_orders"); err == nil {
-		_ = json.Unmarshal([]byte(c.Value), &sns)
+		sns = browserOrders(c.Value)
 	}
 	sns = append(sns, sn)
+	if len(sns) > 40 {
+		sns = sns[len(sns)-40:]
+	}
 	raw, _ := json.Marshal(sns)
-	http.SetCookie(w, &http.Cookie{Name: "dujiaoka_orders", Value: string(raw), Path: "/", MaxAge: 86400 * 30, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+	http.SetCookie(w, &http.Cookie{Name: "dujiaoka_orders", Value: orderCookie(base64.RawURLEncoding.EncodeToString(raw)), Path: "/", MaxAge: 86400 * 30, HttpOnly: true, SameSite: http.SameSiteLaxMode})
 }
 
 func readAll(r *http.Request) ([]byte, error) {

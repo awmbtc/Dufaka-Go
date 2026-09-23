@@ -7,7 +7,7 @@
                     <div class="card mt-3">
                         <div class="row no-gutters">
                             <div class="col-md-4">
-                                <img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" class="card-img-top p-5" alt="{{.Good.Name}}">
+                                <img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/brand/logo.svg{{end}}" class="card-img-top p-5" alt="{{.Good.Name}}">
                                 {{if eq .Good.Type 1}}
                                 <h6><small class="badge bg-success position-absolute top-0 start-0">自动发货</small></h6>
                                 {{else}}
@@ -20,7 +20,7 @@
                                     <h6><small class="text-muted">库存：{{.Good.InStock}}</small></h6>
                                     {{if gt .Good.Retail .Good.Actual}}<h6><small class="text-muted"><del>¥ {{yuan .Good.Retail}}</del></small></h6>{{end}}
                                     <p>{{.Good.Desc}}</p>
-                                    <div class="buy-form mt-3">
+                                    {{if .Good.Wholesale}}<div class="wholesale-prices">{{range wholesaleRows .Good.Wholesale}}<p>购买 {{index . 0}} 件起，{{index . 1}} 元/件</p>{{end}}</div>{{end}}{{if .Good.Prompt}}<details class="purchase-prompt" open><summary>购买提示</summary><div class="rich-content">{{rich .Good.Prompt}}</div></details>{{end}}<div class="buy-form mt-3">
                                         <form action="/create-order" method="post">
                                             <div class="form-group row">
                                                 <div class="col-12"><h6>价格：¥ {{yuan .Good.Actual}}</h6></div>
@@ -61,16 +61,16 @@
                                                     {{end}}
                                                 </div>
                                                 <div class="col-12 mt-2">
-                                                    <button type="submit" class="btn btn-outline-primary"><i class="ali-icon">&#xe7d8;</i> 立即下单</button>
+                                                    <button {{if or (le .Good.InStock 0) (not .Pays)}}disabled{{end}} type="submit" class="btn btn-outline-primary"><i class="ali-icon">&#xe7d8;</i> 立即下单</button>
                                                 </div>
                                             </div>
-                                        </form>
+                                        {{if le .Good.InStock 0}}<p role="status">商品暂时缺货</p>{{else if not .Pays}}<p role="status">暂无可用支付方式，请联系店主。</p>{{end}}</form>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card mt-3"><div class="card-body">{{.Good.Description}}</div></div>
+                    <div class="card mt-3"><div class="card-body">{{rich .Good.Description}}</div></div>
                 </div>
             </div>
         </div>

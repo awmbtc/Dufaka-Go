@@ -72,7 +72,7 @@ func Native(ctx context.Context, appid, mchid, serial, apiV3, privPEM, pubID, no
 	if pubID != "" {
 		req.Header.Set("Wechatpay-Serial", pubID)
 	}
-	res, err := http.DefaultClient.Do(req)
+	res, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
 	if err != nil {
 		return "", err
 	}

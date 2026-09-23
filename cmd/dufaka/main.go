@@ -41,6 +41,11 @@ func main() {
 			log.Printf("数据库暂时连不上，进入安装页: %v", err)
 		} else {
 			db = opened
+			if db.Installed(context.Background()) && os.Getenv("WALLET_MERCHANT_SECRET") != "" {
+				if err := db.EnsureCldxPay(context.Background()); err != nil {
+					log.Printf("cldx 支付渠道没有写上: %v", err)
+				}
+			}
 			if db.Installed(context.Background()) && os.Getenv("DUFAKA_SESSION_KEY") == "" {
 				log.Fatal("站点已安装，但缺少 DUFAKA_SESSION_KEY")
 			}
@@ -58,6 +63,7 @@ func main() {
 				continue
 			}
 			_ = current.ExpireDue(context.Background(), current.Site(context.Background()).ExpireMin)
+			app.SyncCldx(context.Background())
 		}
 	}()
 	addr := os.Getenv("DUFAKA_ADDR")

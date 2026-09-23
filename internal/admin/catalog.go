@@ -279,6 +279,9 @@ func (s *Server) markDeleted(w http.ResponseWriter, r *http.Request, u session, 
 		msg = "已恢复"
 		back += "?trashed=1"
 	}
+	if table == "carmis" {
+		q += " AND reserved_order_id IS NULL AND status=1"
+	}
 	n, err := execCount(s, r, q, id)
 	if err != nil {
 		s.fail(w, u, nav, dbErr(err))
@@ -703,13 +706,13 @@ func (s *Server) carmiSave(w http.ResponseWriter, r *http.Request, u session) {
 		s.renderCarmi(w, r, u, p, dbErr(err), http.StatusBadRequest)
 		return
 	}
-	n, err := execCount(s, r, `UPDATE carmis SET goods_id=$1, status=$2, is_loop=$3, carmi=$4, updated_at=now() WHERE id=$5 AND deleted_at IS NULL`, p.GoodsID, p.Status, p.Loop, p.Text, id)
+	n, err := execCount(s, r, `UPDATE carmis SET goods_id=$1, status=$2, is_loop=$3, carmi=$4, updated_at=now() WHERE id=$5 AND deleted_at IS NULL AND reserved_order_id IS NULL AND status=1`, p.GoodsID, p.Status, p.Loop, p.Text, id)
 	if err != nil {
 		s.renderCarmi(w, r, u, p, dbErr(err), http.StatusBadRequest)
 		return
 	}
 	if n == 0 {
-		s.renderCarmi(w, r, u, p, "记录不存在或已删除", http.StatusBadRequest)
+		s.renderCarmi(w, r, u, p, "记录不存在、已删除、已售出或正被订单占用", http.StatusBadRequest)
 		return
 	}
 	redirectOK(w, r, "/admin/carmis", "保存成功")

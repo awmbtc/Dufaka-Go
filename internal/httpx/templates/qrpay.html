@@ -24,9 +24,10 @@
   var state = document.getElementById("pay-state");
   var timer = setInterval(function () {
     fetch("/check-order-status/" + encodeURIComponent(sn)).then(function (r) { return r.json(); }).then(function (res) {
-      if (res.code === 400001) { clearInterval(timer); if (state) state.textContent = "订单已过期"; setTimeout(function () { location.href = "/"; }, 1200); }
+      if (res.code === 400001) { clearInterval(timer); if (state) state.textContent = "订单已过期"; var pay = document.querySelector("[data-pay-now]"); if (pay) pay.hidden = true; }
+      if (res.code === 400002) { clearInterval(timer); if (state) state.textContent = "订单处理异常，请查看订单或联系店主。"; }
       if (res.code === 200) { clearInterval(timer); if (state) state.textContent = "支付成功，正在打开订单"; location.href = "/detail-order-sn/" + encodeURIComponent(sn); }
-    }).catch(function () {});
+    }).catch(function () { if (state) state.textContent = "暂时无法查询支付状态，正在重试，请勿重复付款。"; });
   }, 5000);
 })();
 </script>

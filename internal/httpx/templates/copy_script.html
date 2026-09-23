@@ -1,0 +1,6 @@
+{{define "copy-script"}}<script>
+document.querySelectorAll('[data-copy-order]').forEach(function(button){button.addEventListener('click',function(){
+var area=button.parentElement.querySelector('textarea');
+if(navigator.clipboard && navigator.clipboard.writeText){navigator.clipboard.writeText(area.value).then(function(){button.textContent='已复制';}).catch(function(){area.focus();area.select();button.textContent='请手动复制';});}
+else{area.focus();area.select();button.textContent='请手动复制';}
+});});</script>{{end}}

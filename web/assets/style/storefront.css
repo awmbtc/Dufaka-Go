@@ -1,0 +1,21 @@
+/* Shared bounds and interaction fixes; each storefront retains its own theme. */
+img { max-width: 100%; }
+.rich-content, .intro, .purchase-prompt, .wholesale-prices { overflow-wrap: anywhere; }
+.rich-content img, .intro img { height: auto; }
+.purchase-prompt, .wholesale-prices { margin: 12px 0; }
+.purchase-prompt summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+.wholesale-prices p { margin: 4px 0; }
+.cldx-amount { font-size: 28px; font-weight: 700; color: #3c8ce7; margin: 16px 0; }
+.cldx-launch { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 20px; margin:16px 0; border-radius:6px; background:#3c8ce7; color:white; }
+.payment-qr { width:256px; height:auto; }
+button.pay-type { font:inherit; cursor:pointer; background:transparent; }
+button.sub, button.add { border:0; background:transparent; }
+button:disabled { opacity:.55; cursor:not-allowed; }
+:focus-visible { outline: 2px solid #2475c8; outline-offset: 3px; }
+.mobile-query { text-align:center; margin:20px; }
+.card-body, .main-box, .goods-msg { min-width:0; overflow-wrap:anywhere; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+@media (min-width:768px) { .mobile-query { display:none; } }
+@media (max-width:575px) { .header .info { max-width:70vw; } .pay-type { max-width:100%; } }
+.query-password { display:block; margin:12px 0; }
+.query-password input { margin-top:6px; }

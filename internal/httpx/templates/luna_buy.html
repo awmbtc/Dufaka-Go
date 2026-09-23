@@ -2,26 +2,26 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
 <title>{{.Good.Name}} | {{.Site.Title}}</title>
 <link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
 <link rel="stylesheet" href="/assets/luna/main.css">
-<link rel="shortcut icon" href="/assets/style/favicon.ico">
-</head>
+<link rel="shortcut icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/style/storefront.css"></head>
 <body>
 <div class="background"></div>
 <div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="header-box">
-<a href="/"><div class="info">{{.Site.TextLogo}}</div></a>
+<a href="/">{{template "mark" .}}<div class="info">{{.Site.TextLogo}}</div></a>
 <div class="query layui-hide-xs"><a href="/order-search">
 <svg t="1602923269232" class="icon" viewBox="0 0 1024 1024" width="20" height="20" aria-hidden="true"><path d="M965.6 447.2 752 447.2c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l213.6 0c14.4 0 26.4 12 26.4 26.4C992.8 435.2 980.8 447.2 965.6 447.2zM965.6 233.6 699.2 233.6c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l267.2 0c14.4 0 26.4 12 26.4 26.4C992.8 221.6 980.8 233.6 965.6 233.6zM606.4 623.2l156.8 156.8c21.6 21.6 21.6 56.8 0 78.4-21.6 21.6-56.8 21.6-78.4 0L528 701.6c-16-16-20-39.2-12-59.2-51.2 44-117.6 72-190.4 72-162.4 0-293.6-131.2-293.6-293.6s131.2-293.6 293.6-293.6 293.6 131.2 293.6 293.6c0 72.8-28 139.2-72 190.4C567.2 603.2 590.4 607.2 606.4 623.2zM324.8 233.6c-103.2 0-187.2 84-187.2 187.2s84 187.2 187.2 187.2S512 523.2 512 420 428 233.6 324.8 233.6zM805.6 607.2l160 0c14.4 0 26.4 12 26.4 26.4 0 14.4-12 26.4-26.4 26.4l-160 0c-14.4 0-26.4-12-26.4-26.4C779.2 619.2 791.2 607.2 805.6 607.2z" fill="#ffffff"></path></svg>
 <span>订单查询</span></a></div>
 </div></div></div></div>
 <div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="main-box">
 <div class="title" style="border-bottom:1px solid #f7f7f7;padding-bottom:5px"><span>商品详情</span></div>
-<div class="layui-col-md4 layui-col-sm12"><div class="goods-img"><img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" alt=""></div></div>
+<div class="layui-col-md4 layui-col-sm12"><div class="goods-img"><img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/brand/logo.svg{{end}}" alt=""></div></div>
 <form action="/create-order" method="post">
 <input type="hidden" name="gid" value="{{.Good.ID}}">
-<div class="layui-col-md8 layui-col-sm12"><div class="goods-msg">
+<div class="layui-col-md8 layui-col-sm12"><div class="goods-msg">{{if .Good.Prompt}}<details class="purchase-prompt" open><summary>购买提示</summary><div class="rich-content">{{rich .Good.Prompt}}</div></details>{{end}}
 <div class="goods-name"><span>{{.Good.Name}}
 {{if eq .Good.Type 1}}<span class="small-tips tips-green">自动发货</span>{{else}}<span class="small-tips tips-yellow">人工处理</span>{{end}}
 <span class="small-tips tips-blue">库存({{.Good.InStock}})</span>
@@ -35,9 +35,9 @@
 <div class="entry notSelection">
 <span class="l-msg">购买数量：</span>
 <label class="input">
-<span class="sub" role="button" style="cursor:pointer;font-size:22px;padding:0 8px;color:#8a8a8a;vertical-align:middle;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px">−</span>
+<button type="button" aria-label="减少数量" class="sub" style="cursor:pointer;font-size:22px;padding:0 8px;color:#8a8a8a;vertical-align:middle;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px">−</button>
 <input class="pay-num" name="by_amount" id="orderNumber" type="number" value="1" min="1" required>
-<span class="add" role="button" style="cursor:pointer;font-size:22px;padding:0 8px;color:#8a8a8a;vertical-align:middle;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px">+</span>
+<button type="button" aria-label="增加数量" class="add" style="cursor:pointer;font-size:22px;padding:0 8px;color:#8a8a8a;vertical-align:middle;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px">+</button>
 </label>
 </div>
 <div class="entry"><span class="l-msg">邮箱：</span><label class="input"><input type="email" name="email" required placeholder="填写你的邮箱"></label></div>
@@ -49,21 +49,21 @@
 <div class="pay notSelection">
 <input type="hidden" name="payway" value="{{if .Pays}}{{(index .Pays 0).ID}}{{else}}0{{end}}">
 {{range $i, $p := .Pays}}
-<div class="pay-type{{if eq $i 0}} pay-select{{end}}" data-id="{{$p.ID}}" data-type="{{$p.Check}}" data-name="{{$p.Name}}">{{$p.Name}}</div>
+<button type="button" class="pay-type{{if eq $i 0}} pay-select{{end}}" data-id="{{$p.ID}}" data-type="{{$p.Check}}" data-name="{{$p.Name}}">{{$p.Name}}</button>
 {{end}}
 </div>
 </div></div>
-<div class="layui-col-sm12 buy"><button type="submit"><span>立即下单</span></button></div>
-</form>
+<div class="layui-col-sm12 buy"><button {{if or (le .Good.InStock 0) (not .Pays)}}disabled{{end}} type="submit"><span>立即下单</span></button></div>
+{{if le .Good.InStock 0}}<p role="status">商品暂时缺货</p>{{else if not .Pays}}<p role="status">暂无可用支付方式，请联系店主。</p>{{end}}</form>
 <div style="clear:both"></div>
 </div></div></div></div>
 {{if .Good.Description}}
 <div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="main-box">
 <div class="title" style="border-bottom:1px solid #f7f7f7;padding-bottom:5px"><span>商品描述</span></div>
-<div class="intro">{{.Good.Description}}</div>
+<div class="intro">{{rich .Good.Description}}</div>
 </div></div></div></div>
 {{end}}
-<div class="footer"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><p>Powered by <a href="/">Dufaka-Go</a></p></div></div></div>
+<div class="mobile-query"><a href="/order-search">查询订单</a></div><div class="footer"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><p>{{template "powered"}}</p></div></div></div>
 <script>
 (function () {
   var num = document.getElementById("orderNumber");

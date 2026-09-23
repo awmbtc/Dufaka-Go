@@ -28,4 +28,4 @@ go run ./cmd/dufaka
 - 微信 Native 收款码在本机生成
 - 易支付、码支付、Payjs、Paysapi、V 免签的签名函数
 
-luna、hyper 的独立皮肤，邮件、极验、推送，以及除微信以外的支付跳转页，还没有接上。
+Unicorn、Luna、Hyper 三套前台及 cldx 四参数付款已在本地实现。邮件、极验、推送及多种外部支付仍未接齐。功能状态与本轮修复、验证范围见 [审核报告](docs/AUDIT-2026-09-23.md)。

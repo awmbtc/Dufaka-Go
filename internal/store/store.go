@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -116,20 +117,28 @@ func (db *DB) Home(ctx context.Context) ([]Group, error) {
 		if err := rows.Scan(&g.ID, &g.Name); err != nil {
 			return nil, err
 		}
-		goods, err := db.goodsByGroup(ctx, g.ID)
+		out = append(out, g)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	for i := range out {
+		goods, err := db.goodsByGroup(ctx, out[i].ID)
 		if err != nil {
 			return nil, err
 		}
-		g.Goods = goods
-		out = append(out, g)
+		out[i].Goods = goods
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
 func (db *DB) goodsByGroup(ctx context.Context, gid int) ([]Good, error) {
 	rows, err := db.Pool.Query(ctx, `
 		SELECT id, group_id, gd_name, COALESCE(picture,''), COALESCE(gd_description,''),
-		       COALESCE(actual_price,0)::text, COALESCE(retail_price,0)::text, in_stock, COALESCE(sales_volume,0),
+		       COALESCE(actual_price,0)::text, COALESCE(retail_price,0)::text,
+ CASE WHEN type=1 THEN (SELECT count(*) FROM carmis WHERE goods_id=goods.id AND status=1 AND reserved_order_id IS NULL AND deleted_at IS NULL) ELSE in_stock END,
+ COALESCE(sales_volume,0),
 		       buy_limit_num, type, COALESCE(wholesale_price_cnf,''), COALESCE(other_ipu_cnf,''),
 		       COALESCE(buy_prompt,''), COALESCE(description,''), is_open
 		FROM goods WHERE group_id=$1 AND is_open=1 AND deleted_at IS NULL ORDER BY ord, id`, gid)
@@ -152,9 +161,7 @@ func scanGoods(ctx context.Context, db *DB, rows pgx.Rows) ([]Good, error) {
 		g.Actual, _ = order.ParseYuan(actual)
 		g.Retail, _ = order.ParseYuan(retail)
 		g.Open = open == 1
-		if g.Type == 1 {
-			_ = db.Pool.QueryRow(ctx, `SELECT count(*) FROM carmis WHERE goods_id=$1 AND status=1 AND reserved_order_id IS NULL AND deleted_at IS NULL`, g.ID).Scan(&g.InStock)
-		}
+
 		list = append(list, g)
 	}
 	return list, rows.Err()
@@ -163,7 +170,9 @@ func scanGoods(ctx context.Context, db *DB, rows pgx.Rows) ([]Good, error) {
 func (db *DB) Good(ctx context.Context, id int) (Good, error) {
 	rows, err := db.Pool.Query(ctx, `
 		SELECT id, group_id, gd_name, COALESCE(picture,''), COALESCE(gd_description,''),
-		       COALESCE(actual_price,0)::text, COALESCE(retail_price,0)::text, in_stock, COALESCE(sales_volume,0),
+		       COALESCE(actual_price,0)::text, COALESCE(retail_price,0)::text,
+ CASE WHEN type=1 THEN (SELECT count(*) FROM carmis WHERE goods_id=goods.id AND status=1 AND reserved_order_id IS NULL AND deleted_at IS NULL) ELSE in_stock END,
+ COALESCE(sales_volume,0),
 		       buy_limit_num, type, COALESCE(wholesale_price_cnf,''), COALESCE(other_ipu_cnf,''),
 		       COALESCE(buy_prompt,''), COALESCE(description,''), is_open
 		FROM goods WHERE id=$1 AND deleted_at IS NULL`, id)
@@ -220,14 +229,15 @@ func (db *DB) CreateOrder(ctx context.Context, in CreateInput, site Site) (Order
 	if in.Amount < 1 {
 		return Order{}, RuleError{Msg: "购买数量不正确"}
 	}
-	if !strings.Contains(in.Email, "@") {
+	address, emailErr := mail.ParseAddress(in.Email)
+	if emailErr != nil || address.Address != in.Email {
 		return Order{}, RuleError{Msg: "邮箱格式不正确"}
 	}
 	if site.SearchPwd && strings.TrimSpace(in.SearchPwd) == "" {
 		return Order{}, RuleError{Msg: "请填写查询密码"}
 	}
-	if site.GeeTest && (strings.TrimSpace(in.Extra["geetest_challenge"]) == "" || strings.TrimSpace(in.Extra["geetest_validate"]) == "") {
-		return Order{}, RuleError{Msg: "请完成验证"}
+	if site.GeeTest {
+		return Order{}, RuleError{Msg: "极验服务尚未接通，请联系店主"}
 	}
 	if in.PayID <= 0 {
 		return Order{}, RuleError{Msg: "请选择支付方式"}
@@ -395,14 +405,25 @@ func (db *DB) OrdersByEmail(ctx context.Context, email, pwd string, needPwd bool
 		return nil, err
 	}
 	defer rows.Close()
-	var out []Order
+	var sns []string
 	for rows.Next() {
 		var sn string
-		if rows.Scan(&sn) == nil {
-			if o, err := db.OrderBySN(ctx, sn); err == nil {
-				out = append(out, o)
-			}
+		if err := rows.Scan(&sn); err != nil {
+			return nil, err
 		}
+		sns = append(sns, sn)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	var out []Order
+	for _, sn := range sns {
+		o, err := db.OrderBySN(ctx, sn)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, o)
 	}
 	return out, nil
 }
@@ -480,6 +501,15 @@ func (db *DB) Complete(ctx context.Context, sn string, paid order.Cents, tradeNo
 			return false, err
 		}
 	} else {
+		if status == -1 || status == 6 {
+			tag, stockErr := tx.Exec(ctx, `UPDATE goods SET in_stock=in_stock-$2 WHERE id=$1 AND in_stock >= $2`, goodsID, amount)
+			if stockErr != nil {
+				return false, stockErr
+			}
+			if tag.RowsAffected() != 1 {
+				return false, RuleError{Msg: "库存不足"}
+			}
+		}
 		_, err = tx.Exec(ctx, `UPDATE orders SET status=2, trade_no=$2, updated_at=now() WHERE id=$1`, id, tradeNo)
 		if err != nil {
 			return false, err
@@ -495,7 +525,7 @@ func (db *DB) ExpireDue(ctx context.Context, minutes int) error {
 	}
 	rows, err := db.Pool.Query(ctx, `
 		SELECT id, coupon_id FROM orders
-		WHERE status=1 AND coupon_ret_back=0 AND created_at < now() - ($1 || ' minutes')::interval`, minutes)
+		WHERE status=1 AND coupon_ret_back=0 AND created_at < now() - ($1 * interval '1 minute')`, minutes)
 	if err != nil {
 		return err
 	}
@@ -515,8 +545,7 @@ func (db *DB) ExpireDue(ctx context.Context, minutes int) error {
 		}
 		tag, err := tx.Exec(ctx, `
 			UPDATE orders SET status=-1, coupon_ret_back=1,
-				actual_price=actual_price+coupon_discount_price,
-				coupon_discount_price=0, updated_at=now()
+				updated_at=now()
 			WHERE id=$1 AND status=1`, r.id)
 		if err != nil {
 			tx.Rollback(ctx)
@@ -541,8 +570,8 @@ func (db *DB) ExpireDue(ctx context.Context, minutes int) error {
 func (db *DB) Pay(ctx context.Context, id int) (Pay, error) {
 	var p Pay
 	err := db.Pool.QueryRow(ctx, `
-		SELECT id, pay_name, pay_check, pay_method, pay_client, COALESCE(merchant_id,''), COALESCE(merchant_key,''), merchant_pem, pay_handleroute
-		FROM pays WHERE id=$1 AND deleted_at IS NULL`, id).Scan(&p.ID, &p.Name, &p.Check, &p.Method, &p.Client, &p.MerchantID, &p.MerchantKey, &p.MerchantPem, &p.Route)
+		SELECT id, pay_name, pay_check, pay_method, pay_client, COALESCE(merchant_id,''), COALESCE(merchant_key,''), merchant_pem, pay_handleroute, is_open
+		FROM pays WHERE id=$1 AND deleted_at IS NULL`, id).Scan(&p.ID, &p.Name, &p.Check, &p.Method, &p.Client, &p.MerchantID, &p.MerchantKey, &p.MerchantPem, &p.Route, &p.Open)
 	if err != nil {
 		return Pay{}, RuleError{Msg: "支付方式不存在"}
 	}

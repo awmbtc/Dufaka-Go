@@ -148,6 +148,12 @@ func TestPagesContainOriginalFields(t *testing.T) {
 	if strings.Contains(body, "AI") {
 		t.Fatal("goods form contains AI")
 	}
+	settingsAt := strings.Index(body, "系统设置")
+	accountAt := strings.Index(body, `id="account-toggle"`)
+	logoutAt := strings.Index(body, "退出登录")
+	if settingsAt < 0 || accountAt < settingsAt || logoutAt < accountAt {
+		t.Fatal("admin account menu is not at the bottom with logout")
+	}
 
 	buf.Reset()
 	err = pages.ExecuteTemplate(&buf, "settings", settingsPage{View: View{Title: "系统设置", User: "管理员", Nav: "settings"}, Tabs: settingTabs(nil)})
@@ -207,7 +213,7 @@ func TestRoutesDoNotRequireDatabase(t *testing.T) {
 
 	login := httptest.NewRecorder()
 	mux.ServeHTTP(login, httptest.NewRequest(http.MethodGet, "/admin/login", nil))
-	if login.Code != http.StatusOK || !strings.Contains(login.Body.String(), "登录") {
+	if login.Code != http.StatusOK || !strings.Contains(login.Body.String(), "登录") || !strings.Contains(login.Body.String(), "/assets/brand/logo.svg") {
 		t.Fatalf("login %d %s", login.Code, login.Body.String())
 	}
 

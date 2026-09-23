@@ -107,6 +107,7 @@ CREATE TABLE orders (
     updated_at               timestamptz,
     deleted_at               timestamptz
 );
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cldx_minor bigint, ADD COLUMN IF NOT EXISTS cldx_expires_at bigint;
 CREATE INDEX idx_orders_email ON orders (email);
 
 CREATE TABLE emailtpls (
