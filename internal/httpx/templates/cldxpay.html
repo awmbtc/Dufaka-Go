@@ -14,6 +14,8 @@
 </section>
 <script>
 (function () {
+  // Polls every 5s; the server keeps the wallet's last answer per order for 10s
+  // (receiptThrottle), so this loop costs at most one wallet call per window.
   var sn = "{{.Order.SN}}";
   var state = document.getElementById("pay-state");
   var timer = setInterval(function () {

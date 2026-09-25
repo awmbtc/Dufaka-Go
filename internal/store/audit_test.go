@@ -2,15 +2,28 @@ package store
 
 import (
 	"context"
-	"dufaka/internal/testdb"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"dufaka/internal/testdb"
 )
 
 func TestOrderLifecycleIntegration(t *testing.T) {
 	pool := testdb.Open(t)
-	db := &DB{Pool: pool}
-	ctx := context.Background()
+	orderLifecycle(t, pool, pool)
+}
+
+// orderLifecycle seeds through pool and drives the store through dbPool, so
+// the same run can use a deliberately small pool (see TestOrderLifecycleSmallPoolIntegration).
+func orderLifecycle(t *testing.T, pool, dbPool *pgxpool.Pool) {
+	t.Helper()
+	db := &DB{Pool: dbPool}
+	// Bounded: a checkout that wedges a small pool fails the test instead of hanging it.
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
 	_, err := pool.Exec(ctx, `INSERT INTO goods_group(id,gp_name) VALUES(1,'test');
  INSERT INTO goods(id,group_id,gd_name,gd_description,gd_keywords,actual_price,in_stock,type) VALUES(1,1,'auto','','',10,0,1),(2,1,'manual','','',10,1,2);
  INSERT INTO carmis(goods_id,carmi) VALUES(1,'ONLY-CARD');

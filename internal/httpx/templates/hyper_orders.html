@@ -17,7 +17,7 @@
 <div class="card"><div class="card-body">
 <div class="row">
 <div class="col-md-4">
-<p class="mb-1"><strong>订单号</strong> {{.SN}}</p>
+<p class="mb-1"><strong>订单号</strong> {{if $.MaskSN}}{{maskSN .SN}}{{else}}{{.SN}}{{end}}</p>
 <p class="mb-1"><strong>订单名称</strong> {{.Title}}</p>
 <p class="mb-1"><strong>购买数量</strong> {{.Amount}}</p>
 <p class="mb-1"><strong>邮箱</strong> {{.Email}}</p>
@@ -27,7 +27,7 @@
 <p class="mb-1"><strong>状态</strong> {{status .Status}}</p>
 <p class="mb-1"><strong>下单时间</strong> {{.Created.Format "2006-01-02 15:04:05"}}</p>
 </div>
-<div class="col-md-4 order-delivery"><textarea class="form-control" rows="4" readonly aria-label="订单信息">{{.Info}}</textarea>{{if .Info}}<button type="button" class="btn btn-primary mt-2" data-copy-order>复制</button>{{end}}{{if eq .Status 1}}<a class="btn btn-primary mt-2" href="/bill/{{.SN}}">继续支付</a>{{end}}</div>
+<div class="col-md-4 order-delivery"><textarea class="form-control" rows="4" readonly aria-label="订单信息">{{.Info}}</textarea>{{if .Info}}<button type="button" class="btn btn-primary mt-2" data-copy-order>复制</button>{{end}}{{if and (eq .Status 1) (not $.MaskSN)}}<a class="btn btn-primary mt-2" href="/bill/{{.SN}}">继续支付</a>{{end}}</div>
 </div>
 </div></div>
 {{else}}

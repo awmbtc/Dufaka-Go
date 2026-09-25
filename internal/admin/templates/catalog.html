@@ -3,6 +3,7 @@
 <h1>商品分类</h1>
 <p>{{if .Trashed}}<a href="/admin/groups">返回列表</a>{{else}}<a href="/admin/groups?trashed=1">回收站</a>{{end}}</p>
 <form class="card" method="post" action="{{.Action}}">
+<input type="hidden" name="_token" value="{{.CSRF}}">
 <h2>{{if .Form.ID}}编辑分类{{else}}新增分类{{end}}</h2>
 <div class="field"><label for="gp_name">分类名称</label><input id="gp_name" name="gp_name" value="{{.Form.Name}}" required maxlength="200"></div>
 <div class="field"><label for="is_open">是否启用</label>
@@ -24,10 +25,10 @@
 <td>{{.ID}}</td><td>{{.Name}}</td><td>{{openName .Open}}</td><td>{{.Ord}}</td><td>{{.Created}}</td>
 <td class="row-actions">
 {{if .Trashed}}
-<form method="post" action="/admin/groups/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><button type="submit">恢复</button></form>
+<form method="post" action="/admin/groups/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><input type="hidden" name="_token" value="{{$.CSRF}}"><button type="submit">恢复</button></form>
 {{else}}
 <a href="/admin/groups/{{.ID}}/edit">编辑</a>
-<form method="post" action="/admin/groups/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><button type="submit">删除</button></form>
+<form method="post" action="/admin/groups/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><input type="hidden" name="_token" value="{{$.CSRF}}"><button type="submit">删除</button></form>
 {{end}}
 </td>
 </tr>
@@ -72,10 +73,10 @@
 <td class="wrap">{{short .Text 40}}</td><td>{{.Created}}</td>
 <td class="row-actions">
 {{if .Trashed}}
-<form method="post" action="/admin/carmis/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><button type="submit">恢复</button></form>
+<form method="post" action="/admin/carmis/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><input type="hidden" name="_token" value="{{$.CSRF}}"><button type="submit">恢复</button></form>
 {{else}}
 <a href="/admin/carmis/{{.ID}}/edit">编辑</a>
-<form method="post" action="/admin/carmis/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><button type="submit">删除</button></form>
+<form method="post" action="/admin/carmis/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><input type="hidden" name="_token" value="{{$.CSRF}}"><button type="submit">删除</button></form>
 {{end}}
 </td>
 </tr>
@@ -92,6 +93,7 @@
 <h1>导入卡密</h1>
 <p><a href="/admin/carmis">卡密列表</a></p>
 <form class="card" method="post" action="/admin/carmis/import" onsubmit="return confirm('确定要导入卡密吗？')">
+<input type="hidden" name="_token" value="{{$.CSRF}}">
 <div class="field"><label for="goods_id">所属商品</label>
 <select id="goods_id" name="goods_id" required>
 <option value="">请选择自动发货商品</option>
@@ -119,6 +121,7 @@
 <h1>编辑卡密</h1>
 <p><a href="/admin/carmis">返回列表</a></p>
 <form class="card" method="post" action="{{.Action}}">
+<input type="hidden" name="_token" value="{{$.CSRF}}">
 <div class="field"><label for="goods_id">所属商品</label>
 <select id="goods_id" name="goods_id">
 {{range .Goods}}<option value="{{.ID}}" {{if eq .ID $.GoodsID}}selected{{end}}>{{.Name}}</option>{{end}}

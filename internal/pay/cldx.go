@@ -75,11 +75,44 @@ func (w Wallet) Quote(ctx context.Context, cnyFen int64) (int64, error) {
 	return body.Amount, nil
 }
 
-// Receipt 是公开的到账查询。
+// Receipt 是公开的到账查询，对应钱包 GET /v1/payments?to=&order= 的返回
+// {"to","order","from","amount","refunded","paid","at"}。钱包不返回付款编号：
+// 付款方地址 From 和到账时间 At 是可选字段，缺失或格式不对都不影响解析。
 type Receipt struct {
-	Paid     bool  `json:"paid"`
-	Amount   int64 `json:"amount"`
-	Refunded int64 `json:"refunded"`
+	Paid     bool
+	Amount   int64
+	Refunded int64
+	From     string    // 付款方地址；钱包没返回时为空
+	At       time.Time // 到账时间（RFC3339）；钱包没返回或格式不对时为零值
+}
+
+// UnmarshalJSON 只要求 paid / amount / refunded 类型正确；from / at 是可选字段，
+// 缺失、为 null 或类型不对一律忽略，不让一笔已到账的付款因为附带字段而解析失败。
+func (r *Receipt) UnmarshalJSON(raw []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return err
+	}
+	var core struct {
+		Paid     bool  `json:"paid"`
+		Amount   int64 `json:"amount"`
+		Refunded int64 `json:"refunded"`
+	}
+	if err := json.Unmarshal(raw, &core); err != nil {
+		return err
+	}
+	*r = Receipt{Paid: core.Paid, Amount: core.Amount, Refunded: core.Refunded}
+	var from string
+	if json.Unmarshal(fields["from"], &from) == nil {
+		r.From = strings.TrimSpace(from)
+	}
+	var at string
+	if json.Unmarshal(fields["at"], &at) == nil {
+		if t, err := time.Parse(time.RFC3339, strings.TrimSpace(at)); err == nil {
+			r.At = t
+		}
+	}
+	return nil
 }
 
 func (w Wallet) Receipt(ctx context.Context, payee, orderID string) (Receipt, error) {

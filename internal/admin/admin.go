@@ -4,6 +4,7 @@ package admin
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"embed"
@@ -32,6 +33,21 @@ const sessionTTL = 7 * 24 * time.Hour
 
 type Server struct {
 	poolFn func() *pgxpool.Pool
+	logins loginLimiter
+	// loginPause is the soft per-account delay; nil means a real, context-aware
+	// sleep. Tests stub it.
+	loginPause func(ctx context.Context, d time.Duration)
+	// settingsSaved runs after the system settings are committed so the
+	// storefront can drop its cached Site immediately.
+	settingsSaved func()
+}
+
+// Option configures Mount.
+type Option func(*Server)
+
+// WithSettingsSaved registers a hook that runs after system settings are saved.
+func WithSettingsSaved(fn func()) Option {
+	return func(s *Server) { s.settingsSaved = fn }
 }
 
 func (s *Server) db() *pgxpool.Pool {
@@ -50,6 +66,8 @@ type View struct {
 	Err   string
 	Prev  string
 	Next  string
+	// CSRF is the per-session form token; every <form method="post"> carries it as _token.
+	CSRF string
 }
 
 type session struct {
@@ -82,6 +100,8 @@ var pages = template.Must(template.New("admin").Funcs(template.FuncMap{
 		return "禁用"
 	},
 	"orderStatus": orderStatus,
+	"payReady":    cashierReady,
+	"filled":      filled,
 	"payMethod": func(v int) string {
 		if v == 2 {
 			return "扫码"
@@ -124,12 +144,14 @@ var pages = template.Must(template.New("admin").Funcs(template.FuncMap{
 
 // Mount registers the /admin site on mux. pool may be nil in tests that only
 // render public pages; data pages then report that the database is unavailable.
-func Mount(mux *http.ServeMux, poolFn func() *pgxpool.Pool) {
+func Mount(mux *http.ServeMux, poolFn func() *pgxpool.Pool, opts ...Option) {
 	s := &Server{poolFn: poolFn}
+	for _, opt := range opts {
+		opt(s)
+	}
 	mux.HandleFunc("GET /admin/login", s.loginForm)
 	mux.HandleFunc("POST /admin/login", s.login)
-	mux.HandleFunc("GET /admin/logout", s.logout)
-	mux.HandleFunc("POST /admin/logout", s.logout)
+	mux.HandleFunc("POST /admin/logout", s.authed(s.logout))
 
 	mux.HandleFunc("GET /admin", s.authed(s.dashboard))
 	mux.HandleFunc("GET /admin/{$}", s.authed(s.dashboard))
@@ -167,6 +189,7 @@ func Mount(mux *http.ServeMux, poolFn func() *pgxpool.Pool) {
 	mux.HandleFunc("GET /admin/orders", s.authed(s.ordersList))
 	mux.HandleFunc("GET /admin/orders/{id}", s.authed(s.orderDetail))
 	mux.HandleFunc("POST /admin/orders/{id}", s.authed(s.orderSave))
+	mux.HandleFunc("POST /admin/orders/{id}/redeliver", s.authed(s.orderRedeliver))
 
 	mux.HandleFunc("GET /admin/pays", s.authed(s.paysPage))
 	mux.HandleFunc("GET /admin/pays/{id}/edit", s.authed(s.payEdit))
@@ -189,8 +212,42 @@ func (s *Server) authed(next func(http.ResponseWriter, *http.Request, session)) 
 			http.Redirect(w, r, "/admin/login", http.StatusFound)
 			return
 		}
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			if !parseForm(w, r) {
+				return
+			}
+			if !csrfOK(u, r.PostForm.Get(csrfField)) {
+				http.Error(w, csrfExpired, http.StatusForbidden)
+				return
+			}
+		}
 		next(w, r, u)
 	}
+}
+
+const (
+	csrfField   = "_token"
+	csrfExpired = "表单已过期，请刷新后重试"
+)
+
+// csrfToken derives the form token from the signed session itself, so no
+// server-side state is needed: HMAC-SHA256(session key, "csrf:"+uid+":"+exp).
+func csrfToken(u session) string {
+	key, ok := sessionKey()
+	if !ok || u.UID <= 0 {
+		return ""
+	}
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte("csrf:" + strconv.FormatInt(u.UID, 10) + ":" + strconv.FormatInt(u.Exp, 10)))
+	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func csrfOK(u session, got string) bool {
+	want := csrfToken(u)
+	if want == "" || got == "" {
+		return false
+	}
+	return hmac.Equal([]byte(want), []byte(got))
 }
 
 func (s *Server) ready(w http.ResponseWriter, u session) bool {
@@ -198,7 +255,7 @@ func (s *Server) ready(w http.ResponseWriter, u session) bool {
 		return true
 	}
 	s.render(w, http.StatusServiceUnavailable, "message", messagePage{
-		View: View{Title: "错误", User: u.Name, Err: "数据库未连接"},
+		View: View{Title: "错误", User: u.Name, Err: "数据库未连接", CSRF: csrfToken(u)},
 		Back: "/admin/login",
 	})
 	return false
@@ -218,13 +275,13 @@ func (s *Server) render(w http.ResponseWriter, status int, name string, data any
 
 func (s *Server) fail(w http.ResponseWriter, u session, nav, msg string) {
 	s.render(w, http.StatusInternalServerError, "message", messagePage{
-		View: View{Title: "错误", User: u.Name, Nav: nav, Err: msg},
+		View: View{Title: "错误", User: u.Name, Nav: nav, Err: msg, CSRF: csrfToken(u)},
 		Back: "/admin",
 	})
 }
 
 func (s *Server) shell(u session, title, nav string, r *http.Request) View {
-	v := View{Title: title, User: u.Name, Nav: nav}
+	v := View{Title: title, User: u.Name, Nav: nav, CSRF: csrfToken(u)}
 	if r != nil {
 		ok := r.URL.Query().Get("ok")
 		if len(ok) <= 80 {
@@ -345,6 +402,9 @@ func orderStatus(v int) string {
 }
 
 func parseForm(w http.ResponseWriter, r *http.Request) bool {
+	if r.PostForm != nil {
+		return true
+	}
 	r.Body = http.MaxBytesReader(w, r.Body, 4<<20)
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "请求不正确", http.StatusBadRequest)

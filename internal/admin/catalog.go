@@ -72,7 +72,7 @@ func (s *Server) goodsList(w http.ResponseWriter, r *http.Request, u session) {
 	q := `SELECT g.id, g.gd_name, g.gd_description, g.gd_keywords, COALESCE(g.picture,''),
 		COALESCE(gg.gp_name,''), COALESCE(g.retail_price,0)::text, g.actual_price::text,
 		CASE WHEN g.type=1 THEN (
-			SELECT count(*)::int FROM carmis c WHERE c.goods_id=g.id AND c.status=1 AND c.deleted_at IS NULL
+			SELECT count(*)::int FROM carmis c WHERE c.goods_id=g.id AND c.status=1 AND c.deleted_at IS NULL AND c.reserved_order_id IS NULL
 		) ELSE g.in_stock END,
 		COALESCE(g.sales_volume,0), COALESCE(g.ord,1), g.type, g.is_open,
 		to_char(COALESCE(g.created_at, now()), 'YYYY-MM-DD HH24:MI'),

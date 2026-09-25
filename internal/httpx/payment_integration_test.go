@@ -107,6 +107,8 @@ func TestWalletPaymentIntegration(t *testing.T) {
 	}
 }
 
+// #5: the notify handler reads the APIv3 key and merchant private key from the wescan
+// payment row; only appid / serial / platform key come from the environment here.
 func TestWeChatSignedNotificationIntegration(t *testing.T) {
 	app, o := auditOrder(t)
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -115,8 +117,31 @@ func TestWeChatSignedNotificationIntegration(t *testing.T) {
 	}
 	pub, _ := x509.MarshalPKIXPublicKey(&key.PublicKey)
 	t.Setenv("WECHAT_PAY_PLATFORM_KEY", string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pub})))
+	t.Setenv("WECHAT_PAY_APP_ID", "wx-test-app")
+	t.Setenv("WECHAT_PAY_CERT_SERIAL_NO", "CERT-TEST")
+	t.Setenv("WECHAT_PAY_API_V3_KEY", "environment-key-must-not-be-used!")
+	t.Setenv("WECHAT_PAY_PLATFORM_SERIAL", "")
 	aesKey := "01234567890123456789012345678901"
-	t.Setenv("WECHAT_PAY_API_V3_KEY", aesKey)
+	priv := string(pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}))
+	// No wescan row yet: the handler must fail loudly instead of guessing a key.
+	early := httptest.NewRecorder()
+	earlyReq := httptest.NewRequest("POST", "/pay/wepay/notify_url", strings.NewReader("{}"))
+	earlyReq.Header.Set("Wechatpay-Timestamp", fmt.Sprint(time.Now().Unix()))
+	app.wechatNotify(early, earlyReq)
+	if early.Code != 500 {
+		t.Fatalf("notify without a wescan row answered %d", early.Code)
+	}
+	// A-12: the timestamp window is checked before any database work, so a stale or
+	// missing timestamp is refused (401) even when nothing is configured.
+	stale := httptest.NewRecorder()
+	app.wechatNotify(stale, httptest.NewRequest("POST", "/pay/wepay/notify_url", strings.NewReader("{}")))
+	if stale.Code != 401 {
+		t.Fatalf("notify without a timestamp answered %d", stale.Code)
+	}
+	_, err = app.live().Pool.Exec(context.Background(), `INSERT INTO pays(id,pay_name,pay_check,pay_method,pay_client,merchant_id,merchant_key,merchant_pem,pay_handleroute) VALUES(2,'微信扫码','wescan',1,3,'1900000000',$1,$2,'/pay/wepay')`, aesKey, priv)
+	if err != nil {
+		t.Fatal(err)
+	}
 	block, _ := aes.NewCipher([]byte(aesKey))
 	gcm, _ := cipher.NewGCM(block)
 	nonce := "123456789012"
@@ -149,12 +174,49 @@ func TestWeChatSignedNotificationIntegration(t *testing.T) {
 	if w.Code != 401 {
 		t.Fatal("accepted unsigned notification")
 	}
+	// #21 (A3-3): the signature decides. With a platform serial configured, a verified
+	// callback carrying another (or no) serial is still accepted — the key is right, only
+	// the owner's serial setting is stale — and the mismatch is logged as a warning.
+	t.Setenv("WECHAT_PAY_PLATFORM_SERIAL", "PUB_KEY_ID_LIVE")
+	logs := captureLog(t)
+	for _, serial := range []string{"PUB_KEY_ID_OLD", ""} {
+		logs.Reset()
+		r = httptest.NewRequest("POST", "/pay/wepay/notify_url", strings.NewReader(string(raw)))
+		r.Header.Set("Wechatpay-Timestamp", ts)
+		r.Header.Set("Wechatpay-Nonce", sigNonce)
+		r.Header.Set("Wechatpay-Signature", base64.StdEncoding.EncodeToString(sig))
+		r.Header.Set("Wechatpay-Serial", serial)
+		w = httptest.NewRecorder()
+		app.wechatNotify(w, r)
+		if w.Code != 200 || !strings.Contains(logs.String(), "序列号不一致") {
+			t.Fatalf("verified callback with serial %q: %d %q", serial, w.Code, logs.String())
+		}
+	}
+	// A wescan row missing its key makes the handler answer 500 (WeChat retries) and log,
+	// not 400. The key is only needed after the signature holds, so this is a fresh,
+	// properly signed request.
+	if _, err := app.live().Pool.Exec(context.Background(), `UPDATE pays SET merchant_key='' WHERE id=2`); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WECHAT_PAY_API_V3_KEY", "")
+	r = httptest.NewRequest("POST", "/pay/wepay/notify_url", strings.NewReader(string(raw)))
+	r.Header.Set("Wechatpay-Timestamp", ts)
+	r.Header.Set("Wechatpay-Nonce", sigNonce)
+	r.Header.Set("Wechatpay-Signature", base64.StdEncoding.EncodeToString(sig))
+	r.Header.Set("Wechatpay-Serial", "PUB_KEY_ID_LIVE")
+	w = httptest.NewRecorder()
+	app.wechatNotify(w, r)
+	if w.Code != 500 {
+		t.Fatalf("incomplete config answered %d", w.Code)
+	}
 }
 
 // Exercise the actual HTTP cookie round trip before any payment is made.
 func TestUnpaidBrowserSearchIntegration(t *testing.T) {
 	t.Setenv("DUFAKA_SESSION_KEY", "browser-search-test-key")
 	app, _ := auditOrder(t)
+	// Checkout only accepts cldx while the wallet is configured (A3-10).
+	app.wallet.Secret, app.wallet.MerchantID = "test-only", "shop-test"
 	_, err := app.live().Pool.Exec(context.Background(), `INSERT INTO goods(id,group_id,gd_name,gd_description,gd_keywords,actual_price,in_stock,type) VALUES(2,1,'Pending browser order','','',10,3,2)`)
 	if err != nil {
 		t.Fatal(err)

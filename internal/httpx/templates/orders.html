@@ -2,9 +2,9 @@
 <section class="main-container"><div class="container"><div class="row justify-content-center">
 {{range .Orders}}<div class="col-md-8"><div class="card mt-3"><div class="row">
 <div class="col-12 col-md-6"><div class="card-body">
-<h5>订单号：{{.SN}}</h5><p>商品：{{.Title}} × {{.Amount}}</p><p>邮箱：{{.Email}}</p>
+<h5>订单号：{{if $.MaskSN}}{{maskSN .SN}}{{else}}{{.SN}}{{end}}</h5><p>商品：{{.Title}} × {{.Amount}}</p><p>邮箱：{{.Email}}</p>
 <p>下单时间：{{.Created.Format "2006-01-02 15:04:05"}}</p><p>金额：¥{{yuan .Actual}}</p><p>状态：{{status .Status}}</p>
-{{if eq .Status 1}}<a class="btn btn-primary" href="/bill/{{.SN}}">继续支付</a>{{end}}
+{{if and (eq .Status 1) (not $.MaskSN)}}<a class="btn btn-primary" href="/bill/{{.SN}}">继续支付</a>{{end}}
 </div></div><div class="col-12 col-md-6"><div class="card-body order-delivery">
 <h6>订单信息</h6><textarea class="form-control" rows="5" readonly aria-label="订单信息">{{.Info}}</textarea>
 {{if .Info}}<button class="btn btn-primary mt-2" type="button" data-copy-order>复制</button>{{end}}

@@ -48,10 +48,10 @@
 <td>{{.Created}}</td>
 <td class="row-actions">
 {{if .Trashed}}
-<form method="post" action="/admin/goods/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><button type="submit">恢复</button></form>
+<form method="post" action="/admin/goods/{{.ID}}/restore" onsubmit="return confirm('确定恢复吗？')"><input type="hidden" name="_token" value="{{$.CSRF}}"><button type="submit">恢复</button></form>
 {{else}}
 <a href="/admin/goods/{{.ID}}/edit">编辑</a>
-<form method="post" action="/admin/goods/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><button type="submit">删除</button></form>
+<form method="post" action="/admin/goods/{{.ID}}/delete" onsubmit="return confirm('确定删除吗？')"><input type="hidden" name="_token" value="{{$.CSRF}}"><button type="submit">删除</button></form>
 {{end}}
 </td>
 </tr>
@@ -70,6 +70,7 @@
 <h1>{{.Title}}</h1>
 <p><a href="/admin/goods">返回列表</a></p>
 <form class="card" method="post" action="{{.Action}}">
+<input type="hidden" name="_token" value="{{$.CSRF}}">
 <div class="field"><label for="group_id">所属分类</label>
 <select id="group_id" name="group_id" required>
 <option value="">请选择</option>

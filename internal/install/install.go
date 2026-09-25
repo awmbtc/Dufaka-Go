@@ -188,16 +188,7 @@ func Run(ctx context.Context, f Form, configPath string) (Result, error) {
 	if _, err := tx.Exec(ctx, `INSERT INTO admin_users (username, password, name, created_at, updated_at) VALUES ($1,$2,$3,now(),now())`, f.Admin, string(hash), f.Admin); err != nil {
 		return Result{}, err
 	}
-	settings := [][2]string{
-		{"title", f.Title},
-		{"text_logo", f.Title},
-		{"template", "unicorn"},
-		{"language", "zh_CN"},
-		{"order_expire_time", "5"},
-		{"app_url", strings.TrimRight(f.AppURL, "/")},
-		{"notice", "欢迎来到 Clodex小店。"},
-	}
-	for _, kv := range settings {
+	for _, kv := range siteSettings(f) {
 		if _, err := tx.Exec(ctx, `INSERT INTO settings (key, value, updated_at) VALUES ($1,$2,now()) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=now()`, kv[0], kv[1]); err != nil {
 			return Result{}, err
 		}
@@ -216,6 +207,22 @@ func Run(ctx context.Context, f Form, configPath string) (Result, error) {
 		return Result{}, fmt.Errorf("配置文件没有写成：%s", err.Error())
 	}
 	return Result{Title: f.Title, AppURL: strings.TrimRight(f.AppURL, "/"), AdminUser: f.Admin, ConfigPath: configPath, DSN: appDSN, SessionKey: sessionKey}, nil
+}
+
+// siteSettings is what a fresh install writes to the settings table. The
+// query password is on from the start: without it an email alone would list
+// a customer's orders, and the audit named switching it on as the first remedy.
+func siteSettings(f Form) [][2]string {
+	return [][2]string{
+		{"title", f.Title},
+		{"text_logo", f.Title},
+		{"template", "unicorn"},
+		{"language", "zh_CN"},
+		{"order_expire_time", "5"},
+		{"is_open_search_pwd", "1"},
+		{"app_url", strings.TrimRight(f.AppURL, "/")},
+		{"notice", "欢迎来到 Clodex小店。"},
+	}
 }
 
 func ensureDatabase(ctx context.Context, adminDSN, name string) error {

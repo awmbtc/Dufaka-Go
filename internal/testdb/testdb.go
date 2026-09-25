@@ -16,7 +16,7 @@ func Open(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	dsn := os.Getenv("DUFAKA_TEST_DATABASE_URL")
 	if dsn == "" {
-		t.Skip("set DUFAKA_TEST_DATABASE_URL to a dedicated test database")
+		t.Skip("skipped: DUFAKA_TEST_DATABASE_URL is not set (point it at a dedicated throwaway PostgreSQL to run this test)")
 	}
 	ctx := context.Background()
 	root, err := pgxpool.New(ctx, dsn)
