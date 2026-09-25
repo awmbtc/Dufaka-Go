@@ -1,16 +1,20 @@
 {{define "hyper_bill.html"}}<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>确认订单 | {{.Site.Title}}</title>
-<link href="/assets/hyper/css/icons.min.css" rel="stylesheet"><link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet"><link href="/assets/hyper/css/hyper.css" rel="stylesheet"></head>
+<link href="/assets/hyper/css/icons.min.css" rel="stylesheet"><link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet"><link href="/assets/hyper/css/hyper.css" rel="stylesheet"><link rel="stylesheet" href="/assets/style/storefront.css"></head>
 <body data-layout="topnav"><div class="wrapper"><div class="content-page"><div class="content">
-<div class="header-navbar"><div class="container header-flex"><a href="/" class="topnav-logo"><div class="logo-title">{{.Site.TextLogo}}</div></a></div></div>
-<div class="container"><div class="card"><div class="card-body">
+<div class="header-navbar"><div class="container header-flex"><a href="/" class="topnav-logo">{{template "mark" .}}<div class="logo-title">{{.Site.TextLogo}}</div></a></div></div>
+<div class="container"><div class="row justify-content-center"><div class="col-lg-6"><div class="card"><div class="card-body">
 <h4>确认订单</h4>
+{{template "payclock" .}}
 <p>订单号：{{.Order.SN}}</p>
 <p>商品：{{.Order.Title}} × {{.Order.Amount}}</p>
+<p>单价：¥{{yuan .Order.GoodsPrice}}</p><p>邮箱：{{.Order.Email}}</p>
+{{if gt .Order.CouponOff 0}}<p>优惠金额：¥{{yuan .Order.CouponOff}}</p>{{end}}
+{{if gt .Order.WholesaleOff 0}}<p>批发优惠：¥{{yuan .Order.WholesaleOff}}</p>{{end}}
 <p>实付：¥{{yuan .Order.Actual}}</p>
 <p>状态：{{status .Order.Status}}</p>
-{{if eq .Order.Status 1}}<a class="btn btn-danger" href="/pay-gateway/{{.Pay.Check}}/{{.Pay.Check}}/{{.Order.SN}}">去支付 {{.Pay.Name}}</a>{{end}}
-</div></div></div>
-<footer class="hyper-footer"><div class="container">Powered by <a href="/">Dufaka-Go</a></div></footer>
+{{if eq .Order.Status 1}}<div data-pay-now><a class="btn btn-danger" href="/pay-gateway/{{.Pay.Check}}/{{.Pay.Check}}/{{.Order.SN}}">去支付 {{.Pay.Name}}</a></div>{{end}}
+</div></div></div></div></div>
+<footer class="hyper-footer"><div class="container">{{template "powered"}}</div></footer>
 </div></div></body></html>{{end}}

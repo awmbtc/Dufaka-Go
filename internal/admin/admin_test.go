@@ -148,6 +148,12 @@ func TestPagesContainOriginalFields(t *testing.T) {
 	if strings.Contains(body, "AI") {
 		t.Fatal("goods form contains AI")
 	}
+	settingsAt := strings.Index(body, "系统设置")
+	accountAt := strings.Index(body, `id="account-toggle"`)
+	logoutAt := strings.Index(body, "退出登录")
+	if settingsAt < 0 || accountAt < settingsAt || logoutAt < accountAt {
+		t.Fatal("admin account menu is not at the bottom with logout")
+	}
 
 	buf.Reset()
 	err = pages.ExecuteTemplate(&buf, "settings", settingsPage{View: View{Title: "系统设置", User: "管理员", Nav: "settings"}, Tabs: settingTabs(nil)})
@@ -207,7 +213,7 @@ func TestRoutesDoNotRequireDatabase(t *testing.T) {
 
 	login := httptest.NewRecorder()
 	mux.ServeHTTP(login, httptest.NewRequest(http.MethodGet, "/admin/login", nil))
-	if login.Code != http.StatusOK || !strings.Contains(login.Body.String(), "登录") {
+	if login.Code != http.StatusOK || !strings.Contains(login.Body.String(), "登录") || !strings.Contains(login.Body.String(), "/assets/brand/logo.svg") {
 		t.Fatalf("login %d %s", login.Code, login.Body.String())
 	}
 
@@ -241,12 +247,30 @@ func TestRoutesDoNotRequireDatabase(t *testing.T) {
 		t.Fatalf("nil pool %d %s", authed.Code, authed.Body.String())
 	}
 
+	// Logout is an authenticated POST: no session -> login page, no cookie touched.
 	out := httptest.NewRecorder()
 	mux.ServeHTTP(out, httptest.NewRequest(http.MethodPost, "/admin/logout", nil))
-	if out.Code != http.StatusFound {
-		t.Fatalf("logout %d", out.Code)
+	if out.Code != http.StatusFound || out.Header().Get("Location") != "/admin/login" || out.Header().Get("Set-Cookie") != "" {
+		t.Fatalf("anonymous logout %d %s %q", out.Code, out.Header().Get("Location"), out.Header().Get("Set-Cookie"))
 	}
-	if ck := out.Header().Get("Set-Cookie"); !strings.Contains(ck, cookieName) {
+	u := session{UID: 1, Exp: time.Now().Add(time.Hour).Unix(), Name: "管理员"}
+	cookie := &http.Cookie{Name: cookieName, Value: signSession(u.UID, u.Name, time.Unix(u.Exp, 0))}
+	out = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/admin/logout", strings.NewReader(url.Values{"_token": {csrfToken(u)}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(cookie)
+	mux.ServeHTTP(out, req)
+	if out.Code != http.StatusFound || out.Header().Get("Location") != "/admin/login" {
+		t.Fatalf("logout %d %s", out.Code, out.Header().Get("Location"))
+	}
+	if ck := out.Header().Get("Set-Cookie"); !strings.Contains(ck, cookieName) || !strings.Contains(ck, "Max-Age=0") {
 		t.Fatalf("logout cookie %s", ck)
+	}
+	out = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/admin/logout", nil)
+	req.AddCookie(cookie)
+	mux.ServeHTTP(out, req)
+	if out.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("GET /admin/logout must not exist: %d", out.Code)
 	}
 }

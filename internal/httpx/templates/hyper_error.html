@@ -1,4 +1,23 @@
 {{define "hyper_error.html"}}<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>提示 | {{.Site.Title}}</title>
-<link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet"><link href="/assets/hyper/css/hyper.css" rel="stylesheet"></head>
-<body data-layout="topnav"><div class="container mt-4"><div class="alert alert-danger">{{.Message}}</div><a href="/">返回首页</a></div></body></html>{{end}}
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>提示 | {{.Site.Title}}</title>
+<link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+<link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet">
+<link href="/assets/hyper/css/hyper.css" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style/storefront.css"></head>
+<body data-layout="topnav"><div class="wrapper"><div class="content-page"><div class="content">
+<div class="header-navbar"><div class="container header-flex">
+<a href="/" class="topnav-logo">{{template "mark" .}}<div class="logo-title">{{.Site.TextLogo}}</div></a>
+<a class="btn btn-outline-primary" href="/order-search">查询订单</a>
+</div></div>
+<div class="container">
+<div class="row justify-content-center"><div class="col-lg-6"><div class="card"><div class="card-body text-center">
+<img class="site-mark" src="/assets/brand/logo.svg" alt="" width="72" height="72">
+<h4 class="mt-3">提示</h4>
+<p class="text-muted">{{.Message}}</p>
+<a class="btn btn-primary" href="javascript:history.back()">返回</a>
+</div></div></div></div>
+</div>
+<footer class="hyper-footer"><div class="container">{{template "powered"}}</div></footer>
+</div></div></body></html>{{end}}

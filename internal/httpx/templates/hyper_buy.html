@@ -1,11 +1,12 @@
 {{define "hyper_buy.html"}}<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Good.Name}} | {{.Site.Title}}</title>
+<link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
 <link href="/assets/hyper/css/icons.min.css" rel="stylesheet">
 <link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet">
-<link href="/assets/hyper/css/hyper.css" rel="stylesheet"></head>
+<link href="/assets/hyper/css/hyper.css" rel="stylesheet"><link rel="stylesheet" href="/assets/style/storefront.css"></head>
 <body data-layout="topnav"><div class="wrapper"><div class="content-page"><div class="content">
-<div class="header-navbar"><div class="container header-flex"><a href="/" class="topnav-logo"><div class="logo-title">{{.Site.TextLogo}}</div></a><a class="btn btn-outline-primary" href="/order-search">查询订单</a></div></div>
+<div class="header-navbar"><div class="container header-flex"><a href="/" class="topnav-logo">{{template "mark" .}}<div class="logo-title">{{.Site.TextLogo}}</div></a><a class="btn btn-outline-primary" href="/order-search">查询订单</a></div></div>
 <div class="container">
 <div class="row"><div class="col-12"><div class="page-title-box"><h4 class="page-title">商品详情</h4></div></div></div>
 <div class="buy-grid"><div class="buy-shop hyper-sm-last"><div class="card card-body">
@@ -14,29 +15,29 @@
 <div class="form-group"><h3>{{.Good.Name}}</h3></div>
 <div class="form-group">
 {{if eq .Good.Type 1}}<span class="badge badge-outline-primary">自动发货</span>{{else}}<span class="badge badge-outline-danger">人工发货</span>{{end}}
-<span class="badge badge-outline-primary">库存({{.Good.InStock}})</span>
+<span class="badge badge-outline-primary">库存({{.Good.InStock}})</span>{{if gt .Good.BuyLimit 0}} <span class="badge badge-outline-dark">限购({{.Good.BuyLimit}})</span>{{end}}
 </div>
-<div class="form-group"><div class="buy-title">价格</div><h3 class="buy-price">¥ {{yuan .Good.Actual}}</h3></div>
-<div class="form-group"><label>邮箱</label><input class="form-control" type="email" name="email" required></div>
+<div class="form-group"><div class="buy-title">价格</div><h3 class="buy-price">¥ {{yuan .Good.Actual}}</h3>{{if gt .Good.Retail .Good.Actual}}<del>¥ {{yuan .Good.Retail}}</del>{{end}}</div>
+{{if .Good.Wholesale}}<div class="wholesale-prices">{{range wholesaleRows .Good.Wholesale}}<p>购买 {{index . 0}} 件起，{{index . 1}} 元/件</p>{{end}}</div>{{end}}{{if .Good.Prompt}}<details class="purchase-prompt" open><summary>购买提示</summary><div class="rich-content">{{rich .Good.Prompt}}</div></details>{{end}}<div class="form-group"><label>邮箱</label><input class="form-control" type="email" name="email" required></div>
 <div class="form-group"><label>购买数量</label><input class="form-control" type="number" name="by_amount" min="1" value="1"></div>
 <div class="form-group"><label>优惠码</label><input class="form-control" name="coupon_code"></div>
 {{if .Site.SearchPwd}}<div class="form-group"><label>查询密码</label><input class="form-control" name="search_pwd" required></div>{{end}}
 <div class="form-group"><div class="buy-title">支付方式</div>
 <input type="hidden" name="payway" value="{{if .Pays}}{{(index .Pays 0).ID}}{{else}}0{{end}}">
 <div class="pay-grid">
-{{range $i, $p := .Pays}}<div class="btn pay-type{{if eq $i 0}} active{{end}}" data-type="{{$p.Check}}" data-id="{{$p.ID}}" data-name="{{$p.Name}}"></div>{{end}}
+{{range $i, $p := .Pays}}<button type="button" class="btn pay-type{{if eq $i 0}} active{{end}}" data-type="{{$p.Check}}" data-id="{{$p.ID}}" data-name="{{$p.Name}}" aria-label="{{$p.Name}}"></button>{{end}}
 </div>
 </div>
 {{if eq .Good.Type 2}}{{range extraInputs .Good.Other}}
 <div class="form-group"><div class="buy-title">{{.Label}}</div><input class="form-control" type="text" name="{{.Field}}" {{if .Required}}required{{end}}></div>
 {{end}}{{end}}
-<button class="btn btn-danger" type="submit">下单</button>
-</form>
+<button {{if or (le .Good.InStock 0) (not .Pays)}}disabled{{end}} class="btn btn-danger" type="submit">下单</button>
+{{if le .Good.InStock 0}}<p role="status">商品暂时缺货</p>{{else if not .Pays}}<p role="status">暂无可用支付方式，请联系店主。</p>{{end}}</form>
 </div></div>
-<div class="card card-body mt-3">{{.Good.Description}}</div>
+<div class="card card-body mt-3 buy-product"><img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/brand/logo.svg{{end}}" alt="{{.Good.Name}}">{{if .Good.Description}}<div class="mt-3">{{rich .Good.Description}}</div>{{end}}</div>
 </div>
 </div></div>
-<footer class="hyper-footer"><div class="container">Powered by <a href="/">Dufaka-Go</a></div></footer>
+<footer class="hyper-footer"><div class="container">{{template "powered"}}</div></footer>
 </div></div>
 <script src="/assets/hyper/js/jquery-3.4.1.min.js"></script>
 <script src="/assets/hyper/js/vendor.min.js"></script>

@@ -1,0 +1,23 @@
+{{define "payclock"}}{{if eq .Order.Status 1}}
+<p class="pay-clock" style="color:#3C8CE7;font-size:18px;font-weight:700;text-align:center;margin:20px 0">请在 <span id="pay-left" data-deadline="{{.PayDeadline}}">{{.Site.ExpireMin}}分00秒</span> 内完成支付，逾期订单会关闭。</p>
+<script>
+(function () {
+  var el = document.getElementById("pay-left");
+  if (!el) return;
+  var end = Number(el.getAttribute("data-deadline")) * 1000;
+  function paint() {
+    var left = Math.max(0, Math.floor((end - Date.now()) / 1000));
+    var m = Math.floor(left / 60);
+    var s = left % 60;
+    el.textContent = m + "分" + (s < 10 ? "0" : "") + s + "秒";
+    if (left === 0) {
+      var pay = document.querySelector("[data-pay-now]");
+      if (pay) pay.style.display = "none";
+    }
+    return left;
+  }
+  paint();
+  var timer = setInterval(function () { if (paint() === 0) clearInterval(timer); }, 1000);
+})();
+</script>
+{{end}}{{end}}

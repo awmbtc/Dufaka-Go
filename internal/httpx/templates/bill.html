@@ -7,6 +7,7 @@
                     <div class="card m-3">
                         <div class="card-body p-2 text-center">
                             <h3 class="card-title text-primary ali-icon">&#xe832; 确认订单</h3>
+                            {{template "payclock" .}}
                         </div>
                         <div class="card card-body p-3 border-0">
                             <div class="mx-auto">
@@ -20,7 +21,7 @@
                                 <div class="mb-1"><label>实际支付：</label><span class="text-danger">¥{{yuan .Order.Actual}}</span></div>
                                 <div class="mb-1"><label>订单状态：</label><span>{{status .Order.Status}}</span></div>
                                 {{if eq .Order.Status 1}}
-                                <div class="mt-3 text-center">
+                                <div class="mt-3 text-center" data-pay-now>
                                     <a class="btn btn-primary" href="/pay-gateway/{{.Pay.Check}}/{{.Pay.Check}}/{{.Order.SN}}">去支付 {{.Pay.Name}}</a>
                                 </div>
                                 {{end}}

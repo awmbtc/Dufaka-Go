@@ -1,7 +1,7 @@
 {{define "luna_qrpay.html"}}<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>扫码支付 | {{.Site.Title}}</title>
-<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"></head>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"><link rel="stylesheet" href="/assets/style/storefront.css"></head>
 <body>
 <div class="background"></div>
 <div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="main-box" style="text-align:center">
@@ -18,9 +18,10 @@
   var state = document.getElementById("pay-state");
   var timer = setInterval(function () {
     fetch("/check-order-status/" + encodeURIComponent(sn)).then(function (r) { return r.json(); }).then(function (res) {
-      if (res.code === 400001) { clearInterval(timer); if (state) state.textContent = "订单已过期"; setTimeout(function () { location.href = "/"; }, 1200); }
+      if (res.code === 400001) { clearInterval(timer); if (state) state.textContent = "订单已过期"; var pay = document.querySelector("[data-pay-now]"); if (pay) pay.hidden = true; }
+      if (res.code === 400002) { clearInterval(timer); if (state) state.textContent = "订单处理异常，请查看订单或联系店主。"; }
       if (res.code === 200) { clearInterval(timer); if (state) state.textContent = "支付成功，正在打开订单"; location.href = "/detail-order-sn/" + encodeURIComponent(sn); }
-    }).catch(function () {});
+    }).catch(function () { if (state) state.textContent = "暂时无法查询支付状态，正在重试，请勿重复付款。"; });
   }, 5000);
 })();
 </script>

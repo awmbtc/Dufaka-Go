@@ -8,7 +8,7 @@
                         <div class="jumbotron jumbotron-fluid p-1">
                             <div class="container">
                                 <h4>站点公告：</h4>
-                                <p class="lead">{{.Site.Notice}}</p>
+                                <p class="lead">{{rich .Site.Notice}}</p>
                             </div>
                         </div>
                     </div>
@@ -24,7 +24,7 @@
                 <div class="col-md-12">
                     <h3 class="text-center"><span>今天需要一点什么？</span></h3>
                     <div class="separator"></div>
-                    <p class="lead text-center"><span>本站所有商品均为自动发货，购买后即可查询订单。</span></p>
+                    <p class="lead text-center"><span>请按商品说明购买，购买后可查询订单和发货状态。</span></p>
                 </div>
                 <div class="col-md-12">
                     <div class="category-menus">
@@ -53,7 +53,7 @@
                                     {{else}}
                                     <span class="badge bg-warning position-absolute top-0 start-0"><i class="ali-icon">&#xe74b;</i> 人工处理</span>
                                     {{end}}
-                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" class="card-img-top" alt="{{.Name}}">
+                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" class="card-img-top" alt="{{.Name}}">
                                     <div class="card-body">
                                         <h6 class="card-title text-truncate">{{.Name}}</h6>
                                         <button type="button" class="btn btn-sm btn-outline-success"><i class="ali-icon">&#xe703;</i> <strong>{{yuan .Actual}}</strong></button>
@@ -71,7 +71,7 @@
                             {{range .Goods}}
                             <div class="col">
                                 <div class="card position-relative">
-                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/common/images/default.jpg{{end}}" class="card-img-top" alt="{{.Name}}">
+                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" class="card-img-top" alt="{{.Name}}">
                                     <div class="card-body">
                                         <h6 class="card-title text-truncate">{{.Name}}</h6>
                                         <button type="button" class="btn btn-sm btn-outline-success"><strong>{{yuan .Actual}}</strong></button>

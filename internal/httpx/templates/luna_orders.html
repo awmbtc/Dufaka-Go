@@ -1,20 +1,89 @@
 {{define "luna_orders.html"}}<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
 <title>订单详情 | {{.Site.Title}}</title>
-<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"></head>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
+<link rel="stylesheet" href="/assets/luna/main.css">
+<link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+<style>.layui-table td,.layui-table th{padding:9px 5px}</style>
+<link rel="stylesheet" href="/assets/style/storefront.css"></head>
 <body>
 <div class="background"></div>
-<div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="header-box"><a href="/"><div class="info">{{.Site.TextLogo}}</div></a><div class="query"><a href="/order-search"><span>订单查询</span></a></div></div></div></div></div>
-<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="main-box">
-{{range .Orders}}
-<table class="layui-table"><tbody>
-<tr><td>订单号</td><td>{{.SN}}</td></tr>
-<tr><td>商品</td><td>{{.Title}} × {{.Amount}}</td></tr>
-<tr><td>金额</td><td>￥{{yuan .Actual}}</td></tr>
-<tr><td>状态</td><td>{{status .Status}}</td></tr>
-<tr><td>详情</td><td><pre>{{.Info}}</pre></td></tr>
-</tbody></table>
-{{end}}
-</div></div></div></div>
-<div class="footer"><p>Powered by <a href="/">Dufaka-Go</a></p></div>
-</body></html>{{end}}
+<div class="header">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+            <div class="header-box">
+                <a href="/">{{template "mark" .}}<div class="info">{{.Site.TextLogo}}</div></a>
+                <div class="query layui-hide-xs"><a href="/order-search"><svg t="1602923269232" class="icon" viewBox="0 0 1024 1024" width="20" height="20" aria-hidden="true"><path d="M965.6 447.2 752 447.2c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l213.6 0c14.4 0 26.4 12 26.4 26.4C992.8 435.2 980.8 447.2 965.6 447.2zM965.6 233.6 699.2 233.6c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l267.2 0c14.4 0 26.4 12 26.4 26.4C992.8 221.6 980.8 233.6 965.6 233.6zM606.4 623.2l156.8 156.8c21.6 21.6 21.6 56.8 0 78.4-21.6 21.6-56.8 21.6-78.4 0L528 701.6c-16-16-20-39.2-12-59.2-51.2 44-117.6 72-190.4 72-162.4 0-293.6-131.2-293.6-293.6s131.2-293.6 293.6-293.6 293.6 131.2 293.6 293.6c0 72.8-28 139.2-72 190.4C567.2 603.2 590.4 607.2 606.4 623.2zM324.8 233.6c-103.2 0-187.2 84-187.2 187.2s84 187.2 187.2 187.2S512 523.2 512 420 428 233.6 324.8 233.6zM805.6 607.2l160 0c14.4 0 26.4 12 26.4 26.4 0 14.4-12 26.4-26.4 26.4l-160 0c-14.4 0-26.4-12-26.4-26.4C779.2 619.2 791.2 607.2 805.6 607.2z" fill="#ffffff"></path></svg><span>订单查询</span></a></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="main">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+            <div class="main-box">
+                <div class="pay-title">订单详情</div>
+                {{range .Orders}}
+                <div class="layui-card-body">
+                    <div class="layui-row order-list">
+                        <div class="layui-col-md4">
+                            <ul class="info-ui">
+                                <li><strong>订单号：</strong>{{if $.MaskSN}}{{maskSN .SN}}{{else}}{{.SN}}{{end}}</li>
+                                <li><strong>订单名称：</strong>{{.Title}}</li>
+                                <li><strong>购买数量：</strong>{{.Amount}}</li>
+                                <li><strong>下单时间：</strong>{{.Created.Format "2006-01-02 15:04:05"}}</li>
+                                <li><strong>邮箱：</strong>{{.Email}}</li>
+                            </ul>
+                        </div>
+                        <div class="layui-col-md4">
+                            <ul class="info-ui">
+                                <li><strong>类型：</strong>{{if eq .Type 1}}<span class="small-tips tips-green">自动发货</span>{{else}}<span class="small-tips tips-yellow">人工处理</span>{{end}}</li>
+                                <li><strong>实际支付：</strong><span class="small-tips tips-green">￥{{yuan .Actual}}</span></li>
+                                <li><strong>状态：</strong>
+                                    {{if eq .Status 1}}<span class="small-tips tips-blue">待支付</span>
+                                    {{else if eq .Status -1}}<span class="small-tips tips-cyan">过期</span>
+                                    {{else if or (eq .Status 5) (eq .Status 6)}}<span class="small-tips tips-black">{{status .Status}}</span>
+                                    {{else}}<span class="small-tips tips-green">{{status .Status}}</span>{{end}}
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="layui-col-md4">
+                            <textarea class="order-info" readonly spellcheck="false">{{.Info}}</textarea>
+                            {{if .Info}}<div class="btn" style="width:100%"><button class="copy-order" type="button" style="width:100%;margin-top:8px">复制</button></div>{{end}}
+                        </div>
+                    </div>
+                </div>
+                {{else}}
+                <div style="text-align:center;padding:24px 0 8px">
+                    <div class="err_title">未找到订单</div>
+                    <div class="err_content">没有查到符合条件的订单。</div>
+                    <div class="btn"><a href="/order-search"><span>返回</span></a></div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="footer"><p>{{template "powered"}}</p></div>
+<div class="query-m"><a href="/order-search"><svg viewBox="0 0 1024 1024" width="22" height="22" aria-hidden="true"><path d="M320.512 428.032h382.976v61.44H320.512zM320.512 616.448h320.512v61.44H320.512z" fill="#ffffff"></path><path d="M802.816 937.984H221.184l-40.96-40.96V126.976l40.96-40.96h346.112l26.624 10.24 137.216 117.76 98.304 79.872 15.36 31.744v571.392l-41.984 40.96z m-540.672-81.92h500.736V345.088L677.888 276.48 550.912 167.936H262.144v688.128z" fill="#ffffff"></path></svg><span>查单</span></a></div>
+<script>
+document.querySelectorAll(".copy-order").forEach(function (button) {
+  button.addEventListener("click", function () {
+    var text = button.parentElement.previousElementSibling.value;
+    var done = function () { button.textContent = "已复制"; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () { button.textContent="复制失败，请手动复制"; });
+      return;
+    }
+    var area = button.parentElement.previousElementSibling;
+    area.focus();
+    area.select();
+    if (document.execCommand("copy")) done(); else button.textContent="请手动复制";
+  });
+});
+</script>
+</body>
+</html>{{end}}

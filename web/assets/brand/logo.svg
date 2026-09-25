@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" role="img" aria-label="Dufaka">
+  <defs>
+    <linearGradient id="g" x1="16" y1="8" x2="96" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3C8CE7"/>
+      <stop offset="1" stop-color="#2BB4E4"/>
+    </linearGradient>
+  </defs>
+  <rect width="112" height="112" rx="28" fill="url(#g)"/>
+  <svg x="25" y="25" width="62" height="62" viewBox="0 0 64 64">
+    <path fill="#ffffff" fill-rule="evenodd" d="M14 8h18c16.5 0 24 10.2 24 24S48.5 56 32 56H14V8zm10 10v28h8c9.4 0 14-6 14-14s-4.6-14-14-14h-8z"/>
+  </svg>
+</svg>

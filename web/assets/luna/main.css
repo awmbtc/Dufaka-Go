@@ -111,9 +111,16 @@ input[type="number"] {
 
 .header .header-box .query a {
     color: #fff;
-    display: inline-block;
-    width: 119px;
-    line-height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    box-sizing: border-box;
+    width: auto;
+    height: 35px;
+    padding: 0 16px;
+    line-height: 1;
+    white-space: nowrap;
     border-radius: 19px;
     cursor: pointer;
     -webkit-user-select: none;
@@ -125,8 +132,7 @@ input[type="number"] {
 }
 
 .header .header-box .query a svg {
-    margin-left: 18px;
-    margin-right: 5px;
+    flex: none;
     vertical-align: middle;
 }
 
@@ -371,22 +377,33 @@ input[type="number"] {
     box-shadow: 0 5px 6px 0 rgba(73, 105, 230, .22);
 }
 
+.query-m {
+    overflow: hidden;
+}
+
 .query-m a {
     width: 60px;
     height: 60px;
-    display: inline-block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
 }
 
 .query-m svg {
-    margin-left: 15px;
-    margin-top: 6px;
+    width: 22px;
+    height: 22px;
+    margin: 0;
 }
 
 .query-m span {
     color: #fff;
     display: block;
     text-align: center;
-    margin-top: -5px;
+    margin: 1px 0 0;
+    font-size: 12px;
+    line-height: 1;
     font-weight: 700;
 }
 
@@ -784,13 +801,29 @@ input[type="number"] {
 
 .info-ui {
     color: #737373;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.info-ui li {
+    display: grid;
+    grid-template-columns: 6.5em minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
 }
 
 .info-ui strong {
-    width: 30%;
-    margin-bottom: 3px;
+    width: auto;
+    margin: 0;
     text-align: right;
-    display: inline-block;
+    white-space: nowrap;
+}
+
+.info-ui .small-tips {
+    justify-self: start;
+    margin-left: 0;
 }
 
 .order-info {
@@ -821,6 +854,13 @@ input[type="number"] {
 
     .header .info {
         color: #fff !important;
+    }
+
+    .header .header-box .site-mark {
+        background: #fff;
+        border-radius: 12px;
+        padding: 3px;
+        box-sizing: content-box;
     }
 
     .query-m {

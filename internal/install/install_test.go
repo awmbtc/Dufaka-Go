@@ -43,3 +43,17 @@ func TestDSNEncodesPassword(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+// Round 2 B-7: a new install has the order query password switched on.
+func TestNewInstallEnablesSearchPassword(t *testing.T) {
+	got := map[string]string{}
+	for _, kv := range siteSettings(Form{Title: "Shop", AppURL: "https://shop.example/"}) {
+		got[kv[0]] = kv[1]
+	}
+	if got["is_open_search_pwd"] != "1" {
+		t.Fatalf("is_open_search_pwd=%q, want 1", got["is_open_search_pwd"])
+	}
+	if got["title"] != "Shop" || got["app_url"] != "https://shop.example" || got["order_expire_time"] != "5" {
+		t.Fatalf("seed settings changed unexpectedly: %v", got)
+	}
+}

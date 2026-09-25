@@ -2,6 +2,7 @@
 {{template "head" .}}
 <h1>邮件模板</h1>
 <form class="card" method="post" action="{{.Action}}">
+<input type="hidden" name="_token" value="{{.CSRF}}">
 <h2>{{if .Form.ID}}编辑邮件模板{{else}}新增邮件模板{{end}}</h2>
 <div class="field"><label for="tpl_name">邮件标题</label><input id="tpl_name" name="tpl_name" value="{{.Form.Name}}" required maxlength="150"></div>
 <div class="field"><label for="tpl_token">邮件标识</label>
@@ -35,6 +36,7 @@
 {{template "head" .}}
 <h1>系统设置</h1>
 <form method="post" action="/admin/settings">
+<input type="hidden" name="_token" value="{{$.CSRF}}">
 <div class="seg" role="tablist">
 {{range $i, $tab := .Tabs}}
 <button type="button" class="seg-btn{{if eq $i 0}} is-on{{end}}" role="tab" data-tab="set-{{$i}}" aria-selected="{{if eq $i 0}}true{{else}}false{{end}}">{{$tab.Name}}</button>
@@ -50,7 +52,7 @@
 {{if eq $f.Kind "textarea"}}
 <textarea id="set-{{$f.Key}}" name="{{$f.Key}}" rows="5">{{$f.Value}}</textarea>
 {{else if eq $f.Kind "switch"}}
-<select id="set-{{$f.Key}}" name="{{$f.Key}}">
+<select id="set-{{$f.Key}}" name="{{$f.Key}}"{{if $f.Disabled}} disabled aria-disabled="true"{{end}}>
 <option value="0" {{if ne $f.Value "1"}}selected{{end}}>关闭</option>
 <option value="1" {{if eq $f.Value "1"}}selected{{end}}>开启</option>
 </select>
@@ -76,8 +78,6 @@
 
 {{define "dashboard"}}
 {{template "head" .}}
-<h1>仪表盘</h1>
-<p class="help">每个梦想的路上，一起前行....！</p>
 <div class="stats">
 <div class="card stat"><span>销售额</span><b>{{.Sales}}</b></div>
 <div class="card stat"><span>近7天销售额</span><b>{{.Week}}</b></div>

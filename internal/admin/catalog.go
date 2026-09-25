@@ -72,7 +72,7 @@ func (s *Server) goodsList(w http.ResponseWriter, r *http.Request, u session) {
 	q := `SELECT g.id, g.gd_name, g.gd_description, g.gd_keywords, COALESCE(g.picture,''),
 		COALESCE(gg.gp_name,''), COALESCE(g.retail_price,0)::text, g.actual_price::text,
 		CASE WHEN g.type=1 THEN (
-			SELECT count(*)::int FROM carmis c WHERE c.goods_id=g.id AND c.status=1 AND c.deleted_at IS NULL
+			SELECT count(*)::int FROM carmis c WHERE c.goods_id=g.id AND c.status=1 AND c.deleted_at IS NULL AND c.reserved_order_id IS NULL
 		) ELSE g.in_stock END,
 		COALESCE(g.sales_volume,0), COALESCE(g.ord,1), g.type, g.is_open,
 		to_char(COALESCE(g.created_at, now()), 'YYYY-MM-DD HH24:MI'),
@@ -278,6 +278,9 @@ func (s *Server) markDeleted(w http.ResponseWriter, r *http.Request, u session, 
 		q = `UPDATE ` + table + ` SET deleted_at=NULL, updated_at=now() WHERE id=$1 AND deleted_at IS NOT NULL`
 		msg = "已恢复"
 		back += "?trashed=1"
+	}
+	if table == "carmis" {
+		q += " AND reserved_order_id IS NULL AND status=1"
 	}
 	n, err := execCount(s, r, q, id)
 	if err != nil {
@@ -703,13 +706,13 @@ func (s *Server) carmiSave(w http.ResponseWriter, r *http.Request, u session) {
 		s.renderCarmi(w, r, u, p, dbErr(err), http.StatusBadRequest)
 		return
 	}
-	n, err := execCount(s, r, `UPDATE carmis SET goods_id=$1, status=$2, is_loop=$3, carmi=$4, updated_at=now() WHERE id=$5 AND deleted_at IS NULL`, p.GoodsID, p.Status, p.Loop, p.Text, id)
+	n, err := execCount(s, r, `UPDATE carmis SET goods_id=$1, status=$2, is_loop=$3, carmi=$4, updated_at=now() WHERE id=$5 AND deleted_at IS NULL AND reserved_order_id IS NULL AND status=1`, p.GoodsID, p.Status, p.Loop, p.Text, id)
 	if err != nil {
 		s.renderCarmi(w, r, u, p, dbErr(err), http.StatusBadRequest)
 		return
 	}
 	if n == 0 {
-		s.renderCarmi(w, r, u, p, "记录不存在或已删除", http.StatusBadRequest)
+		s.renderCarmi(w, r, u, p, "记录不存在、已删除、已售出或正被订单占用", http.StatusBadRequest)
 		return
 	}
 	redirectOK(w, r, "/admin/carmis", "保存成功")

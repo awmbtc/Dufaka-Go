@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"dufaka/internal/store"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 func stockPercent(inStock, sales int) int {
@@ -72,7 +73,7 @@ func lunaGoods(groups []store.Group) template.JS {
 		for _, item := range g.Goods {
 			pic := item.Picture
 			if pic == "" {
-				pic = "/assets/common/images/default.jpg"
+				pic = "/assets/brand/logo.svg"
 			}
 			gg.Goods = append(gg.Goods, good{
 				ID: item.ID, InStock: item.InStock, Picture: pic, GdName: item.Name,
@@ -85,3 +86,8 @@ func lunaGoods(groups []store.Group) template.JS {
 	raw, _ := json.Marshal(out)
 	return template.JS(raw)
 }
+
+var richPolicy = bluemonday.UGCPolicy()
+
+// Only shop-authored rich text uses this sanitizer. Product names and order data remain escaped.
+func rich(text string) template.HTML { return template.HTML(richPolicy.Sanitize(text)) }

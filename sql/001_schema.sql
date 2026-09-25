@@ -107,6 +107,11 @@ CREATE TABLE orders (
     updated_at               timestamptz,
     deleted_at               timestamptz
 );
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cldx_minor bigint, ADD COLUMN IF NOT EXISTS cldx_expires_at bigint, ADD COLUMN IF NOT EXISTS cldx_polled_at bigint;
+-- A 人工处理 order paid while stock was short owes its stock until the owner handles it.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_owed boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_orders_cldx_live ON orders (cldx_polled_at NULLS FIRST, id) WHERE status = 1 AND cldx_minor IS NOT NULL AND deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_cldx_late ON orders (cldx_expires_at) WHERE status = -1 AND cldx_minor IS NOT NULL AND deleted_at IS NULL;
 CREATE INDEX idx_orders_email ON orders (email);
 
 CREATE TABLE emailtpls (

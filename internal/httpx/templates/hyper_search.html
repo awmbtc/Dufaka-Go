@@ -1,14 +1,58 @@
 {{define "hyper_search.html"}}<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>订单查询 | {{.Site.Title}}</title>
-<link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet"><link href="/assets/hyper/css/hyper.css" rel="stylesheet"></head>
+<link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+<link href="/assets/hyper/css/icons.min.css" rel="stylesheet">
+<link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet">
+<link href="/assets/hyper/css/hyper.css" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style/storefront.css"></head>
 <body data-layout="topnav"><div class="wrapper"><div class="content-page"><div class="content">
-<div class="header-navbar"><div class="container header-flex"><a href="/" class="topnav-logo"><div class="logo-title">{{.Site.TextLogo}}</div></a></div></div>
-<div class="container"><div class="row"><div class="col-md-8"><div class="card"><div class="card-body">
-<h4>订单查询</h4>
-<form method="post" action="/search-order-by-sn" class="mb-3"><label>订单号</label><input class="form-control" name="order_sn"><button class="btn btn-danger mt-2">查询</button></form>
-<form method="post" action="/search-order-by-email" class="mb-3"><label>邮箱</label><input class="form-control" name="email"><label>查询密码</label><input class="form-control" name="search_pwd"><button class="btn btn-danger mt-2">查询</button></form>
-<form method="post" action="/search-order-by-browser"><button class="btn btn-outline-primary">查询本机订单</button></form>
-</div></div></div></div></div>
-<footer class="hyper-footer"><div class="container">Powered by <a href="/">Dufaka-Go</a></div></footer>
-</div></div></body></html>{{end}}
+<div class="header-navbar"><div class="container header-flex">
+<a href="/" class="topnav-logo">{{template "mark" .}}<div class="logo-title">{{.Site.TextLogo}}</div></a>
+<a class="btn btn-outline-primary" href="/order-search"><i class="noti-icon uil-file-search-alt search-icon"></i>查询订单</a>
+</div></div>
+<div class="container">
+<div class="row"><div class="col-12"><div class="page-title-box"><h4 class="page-title">订单查询</h4></div></div></div>
+<div class="row justify-content-center"><div class="col-lg-8"><div class="card"><div class="card-body">
+<ul class="nav nav-tabs nav-bordered mb-3">
+<li class="nav-item"><a href="#by-sn" class="nav-link active" data-tab>订单号查询</a></li>
+<li class="nav-item"><a href="#by-email" class="nav-link" data-tab>邮箱查询</a></li>
+<li class="nav-item"><a href="#by-browser" class="nav-link" data-tab>浏览器查询</a></li>
+</ul>
+<div class="tab-content">
+<div class="tab-pane show active" id="by-sn">
+<form method="post" action="/search-order-by-sn">
+<div class="mb-3"><label class="form-label">订单号</label><input class="form-control" name="order_sn" required placeholder="请输入订单号"></div>
+{{if .Site.SearchPwd}}<label class="query-password">查询密码<input type="password" class="form-control layui-input" name="search_pwd" required></label>{{end}}<button class="btn btn-primary" type="submit">立即查询</button>
+</form>
+</div>
+<div class="tab-pane" id="by-email">
+<form method="post" action="/search-order-by-email">
+<div class="mb-3"><label class="form-label">邮箱</label><input class="form-control" type="email" name="email" required placeholder="请输入邮箱"></div>
+{{if .Site.SearchPwd}}<div class="mb-3"><label class="form-label">查询密码</label><input class="form-control" type="password" name="search_pwd" required placeholder="请输入查询密码"></div>{{end}}
+<button class="btn btn-primary" type="submit">立即查询</button>
+</form>
+</div>
+<div class="tab-pane" id="by-browser">
+<p class="text-muted">查询本机浏览器下过的订单。</p>
+<form method="post" action="/search-order-by-browser"><button class="btn btn-primary" type="submit">查询本机订单</button></form>
+</div>
+</div>
+</div></div></div></div>
+</div>
+<footer class="hyper-footer"><div class="container">{{template "powered"}}</div></footer>
+</div></div>
+<script>
+document.querySelectorAll("[data-tab]").forEach(function (link) {
+  link.addEventListener("click", function (event) {
+    event.preventDefault();
+    document.querySelectorAll("[data-tab]").forEach(function (item) { item.classList.remove("active"); });
+    document.querySelectorAll(".tab-pane").forEach(function (item) { item.classList.remove("show", "active"); });
+    link.classList.add("active");
+    var pane = document.querySelector(link.getAttribute("href"));
+    pane.classList.add("show", "active");
+  });
+});
+</script>
+</body></html>{{end}}
