@@ -92,10 +92,17 @@ func (r *Receipt) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
+// Receipt asks the wallet whether the payment for orderID has reached payee. The wallet
+// only answers the payee itself, so the request carries the shop's merchant credentials;
+// an anonymous lookup gets 401 and the order stays unpaid.
 func (w Wallet) Receipt(ctx context.Context, payee, orderID string) (Receipt, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(w.Base, "/")+"/v1/payments?to="+urlQuery(payee)+"&order="+urlQuery(orderID), nil)
 	if err != nil {
 		return Receipt{}, err
+	}
+	req.Header.Set("X-Merchant-Id", w.MerchantID)
+	if w.Secret != "" {
+		req.Header.Set("Authorization", "Bearer "+w.Secret)
 	}
 	client := w.HTTP
 	if client == nil {

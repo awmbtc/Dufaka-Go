@@ -56,6 +56,12 @@ func TestWalletPaymentIntegration(t *testing.T) {
 			return
 		}
 		if r.URL.Path == "/v1/payments" {
+			// The wallet answers the receipt lookup only to the payee itself.
+			if r.Header.Get("X-Merchant-Id") != app.wallet.MerchantID || r.Header.Get("Authorization") != "Bearer test-only" {
+				w.WriteHeader(http.StatusUnauthorized)
+				fmt.Fprint(w, `{"error":"unauthorized"}`)
+				return
+			}
 			fmt.Fprintf(w, `{"paid":%t,"amount":15000,"refunded":0}`, paid)
 			return
 		}
