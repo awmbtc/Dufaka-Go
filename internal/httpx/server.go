@@ -72,6 +72,7 @@ func New(db *store.DB, base, configPath string) (*App, error) {
 		},
 		"rich":          rich,
 		"maskSN":        maskSN,
+		"goodsCount":    goodsCount,
 		"stockPercent":  stockPercent,
 		"wholesaleRows": wholesaleRows,
 		"extraInputs":   extraInputs,

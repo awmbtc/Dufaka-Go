@@ -5,7 +5,17 @@ import (
 	"strings"
 
 	"github.com/microcosm-cc/bluemonday"
+
+	"dufaka/internal/store"
 )
+
+func goodsCount(groups []store.Group) int {
+	total := 0
+	for _, group := range groups {
+		total += len(group.Goods)
+	}
+	return total
+}
 
 func stockPercent(inStock, sales int) int {
 	if inStock+sales <= 0 {

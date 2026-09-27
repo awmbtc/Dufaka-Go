@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
 <title>首页 | {{.Site.Title}}</title>
 <link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
-<link rel="stylesheet" href="/assets/luna/main.css?v=category-pill-1">
+<link rel="stylesheet" href="/assets/luna/main.css?v=category-pill-2">
 <link rel="shortcut icon" href="/assets/brand/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/luna/storefront.css"></head>
 <body>
@@ -45,21 +45,23 @@
     <div class="layui-row">
         <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
             <div class="main-box">
-                <div class="title"><span>选择分类</span></div>
                 <div class="cate" role="tablist" aria-label="商品分类">
+                    <button class="cate-box cate-box-select" id="category-tab-all" type="button" role="tab" data-key="all" aria-selected="true" tabindex="0" aria-controls="goods-panel">
+                        <span class="cate-name">全部</span>
+                        <span class="cate-count">{{goodsCount .Groups}} 个商品</span>
+                    </button>
                     {{range $i, $g := .Groups}}
-                    <button class="cate-box{{if eq $i 0}} cate-box-select{{end}}" id="category-tab-{{$i}}" type="button" role="tab" data-key="{{$i}}" aria-selected="{{if eq $i 0}}true{{else}}false{{end}}" tabindex="{{if eq $i 0}}0{{else}}-1{{end}}" aria-controls="goods-panel">
+                    <button class="cate-box" id="category-tab-{{$i}}" type="button" role="tab" data-key="{{$i}}" aria-selected="false" tabindex="-1" aria-controls="goods-panel">
                         <span class="cate-name">{{$g.Name}}</span>
                         <span class="cate-count">{{len $g.Goods}} 个商品</span>
                     </button>
                     {{end}}
                 </div>
                 <div class="goods">
-                    <p class="title-2"><span>选择商品</span></p>
-                    <div class="goods-list" id="goods-panel" role="tabpanel" aria-live="polite" aria-labelledby="category-tab-0">
+                    <div class="goods-list" id="goods-panel" role="tabpanel" aria-live="polite" aria-labelledby="category-tab-all">
                         {{range $i, $g := .Groups}}
                         {{range $g.Goods}}
-                        <a class="goods-box" data-key="{{$i}}" href="{{if gt .InStock 0}}/buy/{{.ID}}{{else}}javascript:void(0){{end}}"{{if gt $i 0}} hidden{{end}}{{if le .InStock 0}} style="cursor:not-allowed;"{{end}}>
+                        <a class="goods-box" data-key="{{$i}}" href="{{if gt .InStock 0}}/buy/{{.ID}}{{else}}javascript:void(0){{end}}"{{if le .InStock 0}} style="cursor:not-allowed;"{{end}}>
                             <div class="picture"><img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" alt=""></div>
                             <div class="msg">
                                 <div class="goods-name">{{.Name}}</div>
@@ -100,7 +102,7 @@
       item.tabIndex = selected ? 0 : -1;
     });
     cards.forEach(function (card) {
-      card.hidden = card.getAttribute("data-key") !== key;
+      card.hidden = key !== "all" && card.getAttribute("data-key") !== key;
     });
     if (panel) panel.setAttribute("aria-labelledby", tab.id);
     if (moveFocus) tab.focus();

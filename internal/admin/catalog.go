@@ -410,14 +410,16 @@ func readGroup(r *http.Request) (groupRow, error) {
 	if g.Name == "" {
 		return g, errors.New("请填写分类名称")
 	}
-	if runeLen(g.Name) > 200 {
-		return g, errors.New("分类名称超过 200 字")
+	if runeLen(g.Name) > maxGroupNameRunes {
+		return g, errors.New("分类名称超过 6 字")
 	}
 	if g.Open != 0 && g.Open != 1 {
 		return g, errors.New("是否启用不正确")
 	}
 	return g, nil
 }
+
+const maxGroupNameRunes = 6
 
 func (s *Server) groupSave(w http.ResponseWriter, r *http.Request, u session) {
 	if !s.ready(w, u) {

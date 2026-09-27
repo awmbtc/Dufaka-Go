@@ -229,6 +229,10 @@ input[type="number"] {
     align-items: center;
     justify-content: center;
     gap: 6px;
+    box-sizing: border-box;
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
     min-height: 44px;
     margin: 0;
     padding: 0 16px;
@@ -264,11 +268,16 @@ input[type="number"] {
 }
 
 .main .cate .cate-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 13px;
     font-weight: 600;
 }
 
 .main .cate .cate-count {
+    flex: none;
+    white-space: nowrap;
     font-size: 11px;
     opacity: .72;
 }
@@ -919,7 +928,23 @@ input[type="number"] {
         margin-right: 12px;
     }
 
+    .main .cate .cate-box {
+        width: 176px;
+        min-width: 176px;
+        max-width: 176px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
     .order-info {
         margin-top: 10px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1199px) {
+    .main .cate .cate-box {
+        width: 176px;
+        min-width: 176px;
+        max-width: 176px;
     }
 }
