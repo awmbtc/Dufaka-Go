@@ -770,7 +770,7 @@ func logSafe(s string) string {
 }
 
 func (a *App) failStatus(w http.ResponseWriter, r *http.Request, status int, msg string) {
-	site := store.Site{Title: "Dufaka-Go", TextLogo: "Dufaka-Go", Template: "unicorn"}
+	site := store.Site{Title: "Dufaka-Go", TextLogo: "Dufaka-Go"}
 	if db := a.live(); db != nil {
 		site = db.Site(r.Context())
 	}

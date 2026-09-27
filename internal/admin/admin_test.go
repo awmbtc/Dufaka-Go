@@ -113,7 +113,6 @@ func TestApplySettings(t *testing.T) {
 		"driver":             {"smtp"},
 		"host":               {"smtp.example.com"},
 		"is_open_search_pwd": {"1"},
-		"is_open_geetest":    {"0"},
 	}
 	got, err := applySettings(map[string]string{"password": "kept"}, req)
 	if err != nil {

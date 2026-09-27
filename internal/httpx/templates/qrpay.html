@@ -1,23 +1,17 @@
-{{define "qrpay.html"}}{{template "head" .}}
-<section class="main-container">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card mt-3">
-                    <div class="card-body text-center">
-                        <h3>扫码支付</h3>
-                        <p>{{.Pay.Name}}</p>
-                        <p>订单号：{{.Order.SN}}</p>
-                        <p class="text-danger">¥{{yuan .Order.Actual}}</p>
-                        <img alt="支付二维码" src="data:image/png;base64,{{.QR}}">
-                        <p class="mt-3 text-muted">请使用微信扫一扫完成支付。支付成功后会自动打开订单。</p>
-                        <p id="pay-state" class="text-muted"></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+{{define "qrpay.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>扫码支付 | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"><link rel="stylesheet" href="/assets/luna/storefront.css"></head>
+<body>
+<div class="background"></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="main-box" style="text-align:center">
+<div class="pay-title">扫码支付</div>
+<p>{{.Pay.Name}} · {{.Order.SN}}</p>
+<p class="price"><span class="price-sign">￥</span><span class="price-num">{{yuan .Order.Actual}}</span></p>
+<img alt="支付二维码" src="data:image/png;base64,{{.QR}}">
+<p>请使用微信扫一扫完成支付。</p>
+<p id="pay-state"></p>
+</div></div></div></div>
 <script>
 (function () {
   var sn = "{{.Order.SN}}";
@@ -31,4 +25,4 @@
   }, 5000);
 })();
 </script>
-{{template "foot" .}}{{end}}
+</body></html>{{end}}

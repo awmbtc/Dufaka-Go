@@ -141,23 +141,6 @@ func TestPaySaveSeededCldxIntegration(t *testing.T) {
 	}
 }
 
-// #8: unwired switches are disabled in the UI and applySettings forces both
-// off on every save, whatever the form or the stored row says (a stored
-// geetest=1 rejects every order and the disabled control could not clear it).
-func TestApplySettingsUnwiredSwitches(t *testing.T) {
-	base := url.Values{"title": {"店"}, "template": {"unicorn"}, "language": {"zh_CN"}, "order_expire_time": {"5"}, "driver": {"smtp"}, "is_open_img_code": {"1"}}
-	req := httptest.NewRequest(http.MethodPost, "/admin/settings", nil)
-	req.Form = base
-	got, err := applySettings(map[string]string{}, req)
-	if err != nil || got["is_open_img_code"] != "0" { t.Fatalf("image captcha switch must stay off: %v %v", got, err) }
-	var buf strings.Builder
-	if err := pages.ExecuteTemplate(&buf, "settings", settingsPage{View: View{Title: "系统设置", User: "管理员", Nav: "settings"}, Tabs: settingTabs(map[string]string{})}); err != nil { t.Fatal(err) }
-	body := buf.String()
-	for _, item := range []string{`<select id="set-is_open_img_code" name="is_open_img_code" disabled`, helpImgCode} { if !strings.Contains(body, item) { t.Errorf("settings page missing %q", item) } }
-	if strings.Contains(body, "极验") || strings.Contains(body, "geetest") { t.Error("legacy GeeTest controls must be absent") }
-	if !strings.Contains(body, `name="is_open_search_pwd">`) { t.Error("wired switches must stay enabled") }
-}
-
 // #20: the goods list counts only cards the storefront could still sell.
 func TestGoodsListStockExcludesReservedIntegration(t *testing.T) {
 	pool := testdb.Open(t)

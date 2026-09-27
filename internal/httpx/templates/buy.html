@@ -1,79 +1,95 @@
-{{define "buy.html"}}{{template "head" .}}
-<section class="main-container">
-    <div class="container">
-        <div class="good-card">
-            <div class="row justify-content-center">
-                <div class="col-12 col-md-8">
-                    <div class="card mt-3">
-                        <div class="row no-gutters">
-                            <div class="col-md-4">
-                                <img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/brand/logo.svg{{end}}" class="card-img-top p-5" alt="{{.Good.Name}}">
-                                {{if eq .Good.Type 1}}
-                                <h6><small class="badge bg-success position-absolute top-0 start-0">自动发货</small></h6>
-                                {{else}}
-                                <h6><small class="badge bg-warning position-absolute top-0 start-0">人工处理</small></h6>
-                                {{end}}
-                            </div>
-                            <div class="col-md-8">
-                                <div class="card-body p-4">
-                                    <h3 class="card-title">{{.Good.Name}}</h3>
-                                    <h6><small class="text-muted">库存：{{.Good.InStock}}</small></h6>
-                                    {{if gt .Good.Retail .Good.Actual}}<h6><small class="text-muted"><del>¥ {{yuan .Good.Retail}}</del></small></h6>{{end}}
-                                    <p>{{.Good.Desc}}</p>
-                                    {{if .Good.Wholesale}}<div class="wholesale-prices">{{range wholesaleRows .Good.Wholesale}}<p>购买 {{index . 0}} 件起，{{index . 1}} 元/件</p>{{end}}</div>{{end}}{{if .Good.Prompt}}<details class="purchase-prompt" open><summary>购买提示</summary><div class="rich-content">{{rich .Good.Prompt}}</div></details>{{end}}<div class="buy-form mt-3">
-                                        <form action="/create-order" method="post">
-                                            <div class="form-group row">
-                                                <div class="col-12"><h6>价格：¥ {{yuan .Good.Actual}}</h6></div>
-                                                <input type="hidden" name="gid" value="{{.Good.ID}}">
-                                                <div class="col-xs-12 col-md-6">
-                                                    <label class="col-form-label" for="email">邮箱:</label>
-                                                    <input type="email" class="form-control form-control-sm" name="email" id="email" required>
-                                                </div>
-                                                <div class="col-xs-12 col-md-4">
-                                                    <label class="col-form-label" for="shop-number">购买数量:</label>
-                                                    <input type="number" class="form-control form-control-sm" id="shop-number" name="by_amount" min="1" value="1">
-                                                </div>
-                                                <div class="col-xs-12 col-md-6">
-                                                    <label class="col-form-label" for="coupon">优惠码:</label>
-                                                    <input type="text" class="form-control form-control-sm" id="coupon" name="coupon_code">
-                                                </div>
-                                                {{if eq .Good.Type 2}}{{range extraInputs .Good.Other}}
-                                                <div class="col-xs-12 col-md-6">
-                                                    <label class="col-form-label" for="extra-{{.Field}}">{{.Label}}:</label>
-                                                    <input type="text" class="form-control form-control-sm" id="extra-{{.Field}}" name="{{.Field}}" {{if .Required}}required{{end}}>
-                                                </div>
-                                                {{end}}{{end}}
-                                                {{if .Site.SearchPwd}}
-                                                <div class="col-xs-12 col-md-6">
-                                                    <label class="col-form-label" for="search_pwd">查询密码:</label>
-                                                    <input type="text" class="form-control form-control-sm" id="search_pwd" name="search_pwd" required>
-                                                </div>
-                                                {{end}}
-                                                <div class="col-12">
-                                                    <label class="col-form-label">支付方式：</label>
-                                                    {{range $i, $p := .Pays}}
-                                                    <div class="form-check form-check-inline">
-                                                        <label class="form-check-label">
-                                                            <input type="radio" class="form-check-input" name="payway" value="{{$p.ID}}" style="width:20px;height:20px" {{if eq $i 0}}checked{{end}}>
-                                                            {{$p.Name}}
-                                                        </label>
-                                                    </div>
-                                                    {{end}}
-                                                </div>
-                                                <div class="col-12 mt-2">
-                                                    <button {{if or (le .Good.InStock 0) (not .Pays)}}disabled{{end}} type="submit" class="btn btn-outline-primary"><i class="ali-icon">&#xe7d8;</i> 立即下单</button>
-                                                </div>
-                                            </div>
-                                        {{if le .Good.InStock 0}}<p role="status">商品暂时缺货</p>{{else if not .Pays}}<p role="status">暂无可用支付方式，请联系店主。</p>{{end}}</form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mt-3"><div class="card-body">{{rich .Good.Description}}</div></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-{{template "foot" .}}{{end}}
+{{define "buy.html"}}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+<title>{{.Good.Name}} | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
+<link rel="stylesheet" href="/assets/luna/main.css">
+<link rel="shortcut icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/luna/storefront.css"></head>
+<body>
+<div class="background"></div>
+<div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="header-box">
+<a href="/">{{template "mark" .}}<div class="info">{{.Site.TextLogo}}</div></a>
+<div class="query layui-hide-xs"><a href="/order-search">
+<svg t="1602923269232" class="icon" viewBox="0 0 1024 1024" width="20" height="20" aria-hidden="true"><path d="M965.6 447.2 752 447.2c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l213.6 0c14.4 0 26.4 12 26.4 26.4C992.8 435.2 980.8 447.2 965.6 447.2zM965.6 233.6 699.2 233.6c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l267.2 0c14.4 0 26.4 12 26.4 26.4C992.8 221.6 980.8 233.6 965.6 233.6zM606.4 623.2l156.8 156.8c21.6 21.6 21.6 56.8 0 78.4-21.6 21.6-56.8 21.6-78.4 0L528 701.6c-16-16-20-39.2-12-59.2-51.2 44-117.6 72-190.4 72-162.4 0-293.6-131.2-293.6-293.6s131.2-293.6 293.6-293.6 293.6 131.2 293.6 293.6c0 72.8-28 139.2-72 190.4C567.2 603.2 590.4 607.2 606.4 623.2zM324.8 233.6c-103.2 0-187.2 84-187.2 187.2s84 187.2 187.2 187.2S512 523.2 512 420 428 233.6 324.8 233.6zM805.6 607.2l160 0c14.4 0 26.4 12 26.4 26.4 0 14.4-12 26.4-26.4 26.4l-160 0c-14.4 0-26.4-12-26.4-26.4C779.2 619.2 791.2 607.2 805.6 607.2z" fill="#ffffff"></path></svg>
+<span>订单查询</span></a></div>
+</div></div></div></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="main-box">
+<div class="title" style="border-bottom:1px solid #f7f7f7;padding-bottom:5px"><span>商品详情</span></div>
+<div class="layui-col-md4 layui-col-sm12"><div class="goods-img"><img src="{{if .Good.Picture}}{{.Good.Picture}}{{else}}/assets/brand/logo.svg{{end}}" alt=""></div></div>
+<form action="/create-order" method="post">
+<input type="hidden" name="gid" value="{{.Good.ID}}">
+<div class="layui-col-md8 layui-col-sm12"><div class="goods-msg">{{if .Good.Prompt}}<details class="purchase-prompt" open><summary>购买提示</summary><div class="rich-content">{{rich .Good.Prompt}}</div></details>{{end}}
+<div class="goods-name"><span>{{.Good.Name}}
+{{if eq .Good.Type 1}}<span class="small-tips tips-green">自动发货</span>{{else}}<span class="small-tips tips-yellow">人工处理</span>{{end}}
+<span class="small-tips tips-blue">库存({{.Good.InStock}})</span>
+{{if gt .Good.BuyLimit 0}}<span class="small-tips tips-red">限购({{.Good.BuyLimit}})</span>{{end}}
+</span></div>
+<div class="price">
+<span class="price-sign">￥</span><span class="price-num">{{yuan .Good.Actual}}</span>
+{{if gt .Good.Retail .Good.Actual}}<span class="price-c">[<del>￥{{yuan .Good.Retail}}</del>]</span>{{end}}
+</div>
+{{if .Good.Wholesale}}<div class="sale">{{range wholesaleRows .Good.Wholesale}}<span class="small-tips tips-pink">满{{index . 0}}个 单价{{index . 1}}元/件</span>{{end}}</div>{{end}}
+<div class="entry notSelection">
+<span class="l-msg">购买数量：</span>
+<label class="input">
+<button type="button" aria-label="减少数量" class="sub" style="cursor:pointer;font-size:22px;padding:0 8px;color:#8a8a8a;vertical-align:middle;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px">−</button>
+<input class="pay-num" name="by_amount" id="orderNumber" type="number" value="1" min="1" required>
+<button type="button" aria-label="增加数量" class="add" style="cursor:pointer;font-size:22px;padding:0 8px;color:#8a8a8a;vertical-align:middle;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px">+</button>
+</label>
+</div>
+<div class="entry"><span class="l-msg">邮箱：</span><label class="input"><input type="email" name="email" required placeholder="填写你的邮箱"></label></div>
+<div class="entry"><span class="l-msg">优惠码：</span><label class="input"><input type="text" name="coupon_code" placeholder="填写你的优惠码"></label></div>
+{{if eq .Good.Type 2}}{{range extraInputs .Good.Other}}
+<div class="entry"><span class="l-msg">{{.Label}}：</span><label class="input"><input type="text" name="{{.Field}}" {{if .Required}}required{{end}}></label></div>
+{{end}}{{end}}
+{{if .Site.SearchPwd}}<div class="entry"><span class="l-msg">查询密码：</span><label class="input"><input type="text" name="search_pwd" required placeholder="请填写订单的查询密码"></label></div>{{end}}
+<div class="pay notSelection">
+<input type="hidden" name="payway" value="{{if .Pays}}{{(index .Pays 0).ID}}{{else}}0{{end}}">
+{{range $i, $p := .Pays}}
+<button type="button" class="pay-type{{if eq $i 0}} pay-select{{end}}" data-id="{{$p.ID}}" data-type="{{$p.Check}}" data-name="{{$p.Name}}">{{$p.Name}}</button>
+{{end}}
+</div>
+</div></div>
+<div class="layui-col-sm12 buy"><button {{if or (le .Good.InStock 0) (not .Pays)}}disabled{{end}} type="submit"><span>立即下单</span></button></div>
+{{if le .Good.InStock 0}}<p role="status">商品暂时缺货</p>{{else if not .Pays}}<p role="status">暂无可用支付方式，请联系店主。</p>{{end}}</form>
+<div style="clear:both"></div>
+</div></div></div></div>
+{{if .Good.Description}}
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="main-box">
+<div class="title" style="border-bottom:1px solid #f7f7f7;padding-bottom:5px"><span>商品描述</span></div>
+<div class="intro">{{rich .Good.Description}}</div>
+</div></div></div></div>
+{{end}}
+<div class="mobile-query"><a href="/order-search">查询订单</a></div><div class="footer"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><p>{{template "powered"}}</p></div></div></div>
+<script>
+(function () {
+  var num = document.getElementById("orderNumber");
+  var stock = {{.Good.InStock}};
+  var limit = {{.Good.BuyLimit}};
+  function cap() {
+    var max = stock > 0 ? stock : 1;
+    if (limit > 0 && limit < max) max = limit;
+    return max;
+  }
+  function set(v) {
+    if (v < 1) v = 1;
+    if (v > cap()) v = cap();
+    num.value = String(v);
+  }
+  document.querySelectorAll(".sub").forEach(function (el) { el.addEventListener("click", function () { set((parseInt(num.value, 10) || 1) - 1); }); });
+  document.querySelectorAll(".add").forEach(function (el) { el.addEventListener("click", function () { set((parseInt(num.value, 10) || 1) + 1); }); });
+  num.addEventListener("change", function () { set(parseInt(num.value, 10) || 1); });
+  document.querySelectorAll(".pay-type").forEach(function (item) {
+    item.addEventListener("click", function () {
+      document.querySelectorAll(".pay-type").forEach(function (other) { other.classList.remove("pay-select"); });
+      item.classList.add("pay-select");
+      var input = document.querySelector("input[name=payway]");
+      if (input) input.value = item.getAttribute("data-id");
+    });
+  });
+})();
+</script>
+</body></html>{{end}}

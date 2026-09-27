@@ -132,9 +132,9 @@ func (db *DB) Installed(ctx context.Context) bool {
 }
 
 type Site struct {
-	Title, Logo, TextLogo, Keywords, Description, Notice, Footer, Template, Language string
-	SearchPwd                                                                        bool
-	ExpireMin                                                                        int
+	Title, Logo, TextLogo, Keywords, Description, Notice, Footer, Language string
+	SearchPwd                                                              bool
+	ExpireMin                                                              int
 }
 
 // Site returns the parsed site settings, cached for siteCacheTTL. A failed
@@ -173,21 +173,6 @@ func (db *DB) SiteOK(ctx context.Context) (Site, bool) {
 	return s, ok
 }
 
-// DisableCaptchaSwitches clears the image-captcha and GeeTest switches
-// (is_open_img_code, is_open_geetest): neither is wired in this build, so a
-// stored 1 from the original site must not linger in the settings table. It
-// returns how many rows changed and drops the Site cache.
-func (db *DB) DisableCaptchaSwitches(ctx context.Context) (int64, error) {
-	tag, err := db.Pool.Exec(ctx, `
-		UPDATE settings SET value='0', updated_at=now()
-		WHERE key IN ('is_open_geetest','is_open_img_code') AND value<>'0'`)
-	db.InvalidateSite()
-	if err != nil {
-		return 0, err
-	}
-	return tag.RowsAffected(), nil
-}
-
 // InvalidateSite drops the cached Site so the next Site call reads settings
 // again, and bumps the generation so a load already in flight is not stored.
 func (db *DB) InvalidateSite() {
@@ -199,7 +184,7 @@ func (db *DB) InvalidateSite() {
 }
 
 func (db *DB) loadSite(ctx context.Context) (Site, bool) {
-	s := Site{Title: "Dufaka-Go", TextLogo: "Dufaka-Go", Template: "unicorn", Language: "zh_CN", ExpireMin: 5}
+	s := Site{Title: "Dufaka-Go", TextLogo: "Dufaka-Go", Language: "zh_CN", ExpireMin: 5}
 	rows, err := db.Pool.Query(ctx, `SELECT key, value FROM settings`)
 	if err != nil {
 		return s, false
@@ -224,7 +209,6 @@ func (db *DB) loadSite(ctx context.Context) (Site, bool) {
 	set(&s.Description, "description")
 	set(&s.Notice, "notice")
 	set(&s.Footer, "footer")
-	set(&s.Template, "template")
 	set(&s.Language, "language")
 	s.SearchPwd = m["is_open_search_pwd"] == "1"
 	if m["order_expire_time"] != "" {
@@ -404,9 +388,7 @@ type CreateInput struct {
 }
 
 // CreateOrder validates a checkout, reserves its stock and writes the order in
-// one transaction. site supplies the search-password rule; the image-captcha
-// and GeeTest switches are not wired in this build and are ignored here (they
-// are forced to 0 on save and at startup, see DisableCaptchaSwitches).
+// one transaction. site supplies the search-password rule.
 //
 // Failures other than a RuleError come back as an InternalError, so the
 // checkout page never shows a raw transaction error.

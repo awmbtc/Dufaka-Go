@@ -222,15 +222,13 @@ func TestBootChecksSkipWhenUnreachable(t *testing.T) {
 	}
 }
 
-// B3-5/B3-7/B3-9: an installed site gets its cldx schema whether or not the
-// wallet is configured, the cldx pays row only with the secret, and the
-// captcha switches cleared.
+// B3-5/B3-9: an installed site gets its cldx schema whether or not the
+// wallet is configured, and the cldx pays row is created only with the secret.
 func TestBootChecksInstalledSite(t *testing.T) {
 	pool := testdb.Open(t)
 	db := &store.DB{Pool: pool}
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `INSERT INTO admin_users(username,password,name) VALUES('root','x','root');
- INSERT INTO settings(key,value) VALUES('is_open_geetest','1'),('is_open_img_code','1');
  INSERT INTO pays(pay_name,pay_check,pay_method,pay_client,merchant_pem,pay_handleroute,is_open) VALUES('支付宝','alipay',1,3,'','/pay/yipay',1);
  DROP INDEX idx_orders_cldx_live; ALTER TABLE orders DROP COLUMN cldx_polled_at`); err != nil {
 		t.Fatal(err)
@@ -243,20 +241,15 @@ func TestBootChecksInstalledSite(t *testing.T) {
 	}
 	var cols, cldxPays, openPays int
 	var live bool
-	var captcha string
 	if err := pool.QueryRow(ctx, `SELECT
  (SELECT count(*) FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='orders' AND column_name='cldx_polled_at'),
  to_regclass('idx_orders_cldx_live') IS NOT NULL,
- (SELECT count(*) FROM pays WHERE pay_check='cldx'),
- (SELECT count(*) FROM pays WHERE is_open=1),
- (SELECT string_agg(value, ',' ORDER BY key) FROM settings WHERE key IN ('is_open_geetest','is_open_img_code'))`).Scan(&cols, &live, &cldxPays, &openPays, &captcha); err != nil {
+	 (SELECT count(*) FROM pays WHERE pay_check='cldx'),
+	 (SELECT count(*) FROM pays WHERE is_open=1)`).Scan(&cols, &live, &cldxPays, &openPays); err != nil {
 		t.Fatal(err)
 	}
-	if cols != 1 || !live || cldxPays != 0 || openPays != 0 || captcha != "0,0" {
-		t.Fatalf("boot without wallet secret: cols=%d live=%v cldxPays=%d openPays=%d captcha=%s log=%s", cols, live, cldxPays, openPays, captcha, buf.String())
-	}
-	if !strings.Contains(buf.String(), "已关闭 2 个未接通的验证码开关") {
-		t.Fatalf("captcha clear not logged: %q", buf.String())
+	if cols != 1 || !live || cldxPays != 0 || openPays != 1 {
+		t.Fatalf("boot without wallet secret: cols=%d live=%v cldxPays=%d openPays=%d log=%s", cols, live, cldxPays, openPays, buf.String())
 	}
 	if !bootChecks(db, true, true) {
 		t.Fatal("second boot")
@@ -295,8 +288,5 @@ func TestBootChecksStepTimeout(t *testing.T) {
 	}
 	if took := time.Since(start); took > 5*time.Second {
 		t.Fatalf("boot waited %v on a locked table", took)
-	}
-	if !strings.Contains(buf.String(), "关闭图形验证码与极验开关失败") {
-		t.Fatalf("timed-out step not logged: %q", buf.String())
 	}
 }

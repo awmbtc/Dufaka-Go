@@ -1,36 +1,27 @@
-{{define "bill.html"}}{{template "head" .}}
-<section class="main-container">
-    <div class="container">
-        <div class="good-card">
-            <div class="row justify-content-center">
-                <div class="col-md-8 col-12">
-                    <div class="card m-3">
-                        <div class="card-body p-2 text-center">
-                            <h3 class="card-title text-primary ali-icon">&#xe832; 确认订单</h3>
-                            {{template "payclock" .}}
-                        </div>
-                        <div class="card card-body p-3 border-0">
-                            <div class="mx-auto">
-                                <h5><small class="text-muted">订单号：{{.Order.SN}}</small></h5>
-                                <div class="mb-1"><label>商品名称：</label><span>{{.Order.Title}}</span></div>
-                                <div class="mb-1"><label>商品单价：</label><span>{{yuan .Order.GoodsPrice}}</span></div>
-                                <div class="mb-1"><label>购买数量：</label><span>{{.Order.Amount}}</span></div>
-                                <div class="mb-1"><label>邮箱：</label><span>{{.Order.Email}}</span></div>
-                                <div class="mb-1"><label>批发优惠：</label><span>¥{{yuan .Order.WholesaleOff}}</span></div>
-                                <div class="mb-1"><label>优惠金额：</label><span>¥{{yuan .Order.CouponOff}}</span></div>
-                                <div class="mb-1"><label>实际支付：</label><span class="text-danger">¥{{yuan .Order.Actual}}</span></div>
-                                <div class="mb-1"><label>订单状态：</label><span>{{status .Order.Status}}</span></div>
-                                {{if eq .Order.Status 1}}
-                                <div class="mt-3 text-center" data-pay-now>
-                                    <a class="btn btn-primary" href="/pay-gateway/{{.Pay.Check}}/{{.Pay.Check}}/{{.Order.SN}}">去支付 {{.Pay.Name}}</a>
-                                </div>
-                                {{end}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-{{template "foot" .}}{{end}}
+{{define "bill.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>确认订单 | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css"><link rel="stylesheet" href="/assets/luna/storefront.css"></head>
+<body>
+<div class="background"></div>
+<div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="header-box"><a href="/">{{template "mark" .}}<div class="info">{{.Site.TextLogo}}</div></a></div></div></div></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="main-box">
+<div class="pay-title">确认订单</div>
+<div class="layui-card-body">
+{{template "payclock" .}}
+<table class="layui-table" lay-skin="nob">
+<tbody>
+<tr><td>订单号</td><td>{{.Order.SN}}</td></tr>
+<tr><td>商品名称</td><td>{{.Order.Title}}</td></tr>
+<tr><td>商品单价</td><td>￥{{yuan .Order.GoodsPrice}}</td></tr>
+<tr><td>购买数量</td><td>{{.Order.Amount}}</td></tr>
+<tr><td>邮箱</td><td>{{.Order.Email}}</td></tr>
+{{if gt .Order.CouponOff 0}}<tr><td>优惠码优惠</td><td>￥{{yuan .Order.CouponOff}}</td></tr>{{end}}
+{{if gt .Order.WholesaleOff 0}}<tr><td>批发优惠</td><td>￥{{yuan .Order.WholesaleOff}}</td></tr>{{end}}
+<tr><td>实际支付</td><td>￥{{yuan .Order.Actual}}</td></tr>
+<tr><td>订单状态</td><td>{{status .Order.Status}}</td></tr>
+</tbody></table>
+{{if eq .Order.Status 1}}<div style="text-align:center" data-pay-now><a class="layui-btn" href="/pay-gateway/{{.Pay.Check}}/{{.Pay.Check}}/{{.Order.SN}}">去支付 {{.Pay.Name}}</a></div>{{end}}
+</div></div></div></div></div>
+<div class="footer"><p>{{template "powered"}}</p></div>
+</body></html>{{end}}
