@@ -119,10 +119,19 @@
   var mobileOptions = Array.prototype.slice.call(document.querySelectorAll(".mobile-category-option"));
   var sortButtons = Array.prototype.slice.call(document.querySelectorAll(".mobile-sort-button"));
 
+  function compareCategoryNames(a, b) {
+    var aName = a.getAttribute("data-name");
+    var bName = b.getAttribute("data-name");
+    var aLatin = /^[A-Za-z0-9]/.test(aName);
+    var bLatin = /^[A-Za-z0-9]/.test(bName);
+    if (aLatin !== bLatin) return aLatin ? -1 : 1;
+    return aName.localeCompare(bName, aLatin ? "en" : "zh-CN", {numeric: true, sensitivity: "base"});
+  }
+
   mobileOptions.sort(function (a, b) {
     if (a.getAttribute("data-key") === "all") return -1;
     if (b.getAttribute("data-key") === "all") return 1;
-    return a.getAttribute("data-name").localeCompare(b.getAttribute("data-name"), "zh-CN", {numeric: true, sensitivity: "base"});
+    return compareCategoryNames(a, b);
   });
   if (mobileMenu) mobileOptions.forEach(function (option) { mobileMenu.appendChild(option); });
 
