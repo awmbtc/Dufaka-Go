@@ -1,13 +1,113 @@
-{{define "home.html"}}<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#17212b"><title>{{.Site.Title}}</title><link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/style/storefront.css"></head><body class="tg-app-page">
-<div class="tg-window"><header class="tg-windowbar"><div class="tg-traffic" aria-hidden="true"><i class="red"></i><i class="yellow"></i><i class="green"></i></div><div class="tg-window-title"><img class="site-mark" src="/assets/brand/logo.svg" alt="">{{.Site.TextLogo}}</div><div class="tg-window-actions"><a href="/order-search" title="查询订单">⌕</a><button type="button" aria-label="更多">•••</button></div></header>
-<div class="tg-app-shell"><nav class="tg-app-rail" aria-label="应用导航"><a class="is-active" href="/" title="商品"><span>▦</span></a><a href="/order-search" title="订单查询"><span>⌕</span></a><a href="#" title="收藏"><span>☆</span></a><div class="tg-rail-spacer"></div><a href="/admin/login" title="管理后台"><span>⚙</span></a></nav>
-<aside class="tg-dialogs" aria-label="商品目录"><div class="tg-dialogs-head"><h1>商品</h1><a href="/order-search" class="tg-compose" aria-label="查询订单">⌕</a></div><label class="tg-dialog-search"><span aria-hidden="true">⌕</span><input id="goods-search" type="search" placeholder="搜索" autocomplete="off"></label><div class="tg-dialog-tabs"><button class="is-active" type="button">全部</button><button type="button">在售</button><button type="button">分类</button></div><div class="tg-dialog-list">
-{{range .Groups}}{{range .Goods}}<a class="tg-dialog-row" href="#product-{{.ID}}" data-goods-search="{{.Name}}"><span class="tg-dialog-avatar">•</span><span class="tg-dialog-copy"><strong>{{.Name}}</strong><small>{{if gt .InStock 0}}库存 {{.InStock}} · {{yuan .Actual}}{{else}}暂时缺货 · {{yuan .Actual}}{{end}}</small></span><time>{{if eq .Type 1}}自动{{else}}人工{{end}}</time></a>{{end}}{{end}}
-</div><a class="tg-dialog-footer" href="/order-search"><span>⌕</span><span><strong>查询订单</strong><small>按订单号或邮箱查找</small></span><b>›</b></a></aside>
-<main class="tg-chat"><header class="tg-chat-head"><span class="tg-chat-avatar">D</span><div><strong>{{.Site.TextLogo}}</strong><small>官方商品目录 · {{len .Groups}} 个分类</small></div><div class="tg-chat-head-actions"><a href="/order-search">⌕</a><button type="button">•••</button></div></header><div class="tg-chat-body"><div class="tg-date-pill">商品目录</div><div class="tg-notice-bubble"><strong>欢迎来到 {{.Site.TextLogo}}</strong><div class="rich-content">{{rich .Site.Notice}}</div><small>现在</small></div><div class="tg-section-label">选择商品</div><div class="tg-message-grid">
-{{range .Groups}}{{range .Goods}}<article class="tg-message-card" id="product-{{.ID}}" data-goods-search="{{.Name}}"><div class="tg-message-card-head"><span class="tg-product-avatar">•</span><div><strong>{{.Name}}</strong><small>{{if eq .Type 1}}自动发货{{else}}人工处理{{end}}</small></div><span class="tg-message-time">{{.InStock}} 件</span></div><div class="tg-message-card-body"><div class="tg-message-price">{{yuan .Actual}}</div><div class="tg-message-stock">{{if gt .InStock 0}}库存充足，可立即下单{{else}}当前缺货，请稍后再试{{end}}</div><a class="tg-message-button{{if le .InStock 0}} is-disabled{{end}}" href="{{if gt .InStock 0}}/buy/{{.ID}}{{else}}#product-{{.ID}}{{end}}">{{if gt .InStock 0}}立即下单{{else}}缺货{{end}} <span>›</span></a></div></article>{{end}}{{end}}
-</div><div class="tg-date-pill tg-date-bottom">付款后可在订单查询中查看发货状态</div></div><div class="tg-compose-bar"><button type="button" aria-label="附件">⌕</button><span>选择商品后开始下单</span><button type="button" aria-label="表情">☺</button></div></main>
-<aside class="tg-profile" aria-label="商品信息"><div class="tg-profile-cover"></div><div class="tg-profile-avatar">D</div><h2 id="tg-profile-name">{{.Site.TextLogo}}</h2><p>官方小店</p><div class="tg-profile-line"></div><div class="tg-profile-item"><span>▦</span><div><strong>商品与服务</strong><small>按分类浏览全部商品</small></div></div><div class="tg-profile-item"><span>⌕</span><div><strong>订单查询</strong><small>查看付款和发货状态</small></div></div><a class="tg-profile-button" href="/order-search">打开订单查询</a></aside>
-</div></div><script>
-(function(){var search=document.getElementById('goods-search');if(search)search.addEventListener('input',function(){var q=search.value.trim().toLowerCase();document.querySelectorAll('[data-goods-search]').forEach(function(el){el.hidden=q!==''&&el.getAttribute('data-goods-search').toLowerCase().indexOf(q)===-1;});});document.querySelectorAll('.tg-dialog-row').forEach(function(row){row.addEventListener('click',function(){document.querySelectorAll('.tg-dialog-row').forEach(function(x){x.classList.remove('is-active');});row.classList.add('is-active');});});})();
-</script></body></html>{{end}}
+{{define "home.html"}}{{template "head" .}}
+<div class="notice">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <div class="jumbotron jumbotron-fluid p-1">
+                            <div class="container">
+                                <h4>站点公告：</h4>
+                                <p class="lead">{{rich .Site.Notice}}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="main-container">
+    <div class="category">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h3 class="text-center"><span>今天需要一点什么？</span></h3>
+                    <div class="separator"></div>
+                    <p class="lead text-center"><span>请按商品说明购买，购买后可查询订单和发货状态。</span></p>
+                </div>
+                <div class="col-md-12">
+                    <div class="category-menus">
+                        <ul class="nav nav-pills justify-content-center">
+                            <li class="nav-item"><a href="#group-all" data-bs-toggle="tab" class="btn btn-outline-secondary active">全部</a></li>
+                            {{range .Groups}}
+                            <li class="nav-item"><a href="#group-{{.ID}}" data-bs-toggle="tab" class="btn btn-outline-secondary">{{.Name}}</a></li>
+                            {{end}}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="goods">
+        <div class="container">
+            <div class="goods-list mb-5">
+                <div id="goodsTabContent" class="tab-content">
+                    <div class="tab-pane fade active show" id="group-all">
+                        <div class="row row-cols-2 row-cols-md-5 g-4">
+                            {{range .Groups}}{{range .Goods}}
+                            <div class="col">
+                                <div class="card position-relative">
+                                    {{if eq .Type 1}}
+                                    <span class="badge bg-success position-absolute top-0 start-0"><i class="ali-icon">&#xe7db;</i> 自动发货</span>
+                                    {{else}}
+                                    <span class="badge bg-warning position-absolute top-0 start-0"><i class="ali-icon">&#xe74b;</i> 人工处理</span>
+                                    {{end}}
+                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" class="card-img-top" alt="{{.Name}}">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-truncate">{{.Name}}</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-success"><i class="ali-icon">&#xe703;</i> <strong>{{yuan .Actual}}</strong></button>
+                                        <h6 class="mt-2"><small class="text-muted">库存：{{.InStock}}</small></h6>
+                                        <a href="/buy/{{.ID}}" class="btn btn-primary fr"><i class="ali-icon">&#xe7d8;</i> 立即下单</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}{{end}}
+                        </div>
+                    </div>
+                    {{range .Groups}}
+                    <div class="tab-pane fade" id="group-{{.ID}}">
+                        <div class="row row-cols-2 row-cols-md-5 g-4">
+                            {{range .Goods}}
+                            <div class="col">
+                                <div class="card position-relative">
+                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" class="card-img-top" alt="{{.Name}}">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-truncate">{{.Name}}</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-success"><strong>{{yuan .Actual}}</strong></button>
+                                        <h6 class="mt-2"><small class="text-muted">库存：{{.InStock}}</small></h6>
+                                        <a href="/buy/{{.ID}}" class="btn btn-primary fr">立即下单</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+document.querySelectorAll(".category-menus a[data-bs-toggle='tab']").forEach(function (link) {
+  link.addEventListener("click", function (event) {
+    event.preventDefault();
+    var pane = document.querySelector(link.getAttribute("href"));
+    if (!pane) return;
+    document.querySelectorAll("#goodsTabContent .tab-pane").forEach(function (item) {
+      item.classList.remove("active", "show");
+    });
+    pane.classList.add("active", "show");
+    document.querySelectorAll(".category-menus a").forEach(function (item) {
+      item.classList.remove("active");
+    });
+    link.classList.add("active");
+  });
+});
+</script>
+<style>
+.form-check-input { width: 20px; height: 20px; }
+.form-check-label { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+</style>
+{{template "foot" .}}{{end}}
