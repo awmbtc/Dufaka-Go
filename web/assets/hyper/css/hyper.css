@@ -359,10 +359,6 @@ body[data-layout=topnav] .content-page {
     font-weight: 400;
     color: #212529;
 }
-.geetest_holder.geetest_wind {
-    width: 100% !important;
-    min-width: 100% !important;
-}
 .buy-product img {
     max-width:100%;
     height: auto;

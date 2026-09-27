@@ -46,12 +46,6 @@ input[type="number"] {
 }
 
 
-/*极验*/
-.geetest_holder.geetest_wind {
-    display: inline-block;
-    vertical-align: middle;
-}
-
 .notSelection {
     -moz-user-select: none; /*火狐*/
     -webkit-user-select: none; /*webkit浏览器*/
@@ -743,10 +737,6 @@ input[type="number"] {
     width: 178px !important;
 }
 
-#wait-geetest-captcha {
-    color: #999;
-}
-
 .err_title {
     color: #545454;
     font-size: 20px;
@@ -885,10 +875,6 @@ input[type="number"] {
 
     .main .goods .goods-price div {
         margin-bottom: 5px;
-    }
-
-    .geetest_holder.geetest_wind {
-        margin-top: 10px;
     }
 
     .order-info {
