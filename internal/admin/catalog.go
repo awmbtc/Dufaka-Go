@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -410,7 +411,7 @@ func readGroup(r *http.Request) (groupRow, error) {
 	if g.Name == "" {
 		return g, errors.New("请填写分类名称")
 	}
-	if runeLen(g.Name) > maxGroupNameRunes {
+	if chineseLen(g.Name) > maxGroupChineseRunes {
 		return g, errors.New("分类名称超过 6 字")
 	}
 	if g.Open != 0 && g.Open != 1 {
@@ -419,7 +420,17 @@ func readGroup(r *http.Request) (groupRow, error) {
 	return g, nil
 }
 
-const maxGroupNameRunes = 6
+const maxGroupChineseRunes = 6
+
+func chineseLen(s string) int {
+	n := 0
+	for _, r := range s {
+		if unicode.Is(unicode.Han, r) {
+			n++
+		}
+	}
+	return n
+}
 
 func (s *Server) groupSave(w http.ResponseWriter, r *http.Request, u session) {
 	if !s.ready(w, u) {

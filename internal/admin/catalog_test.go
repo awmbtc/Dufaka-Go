@@ -47,3 +47,18 @@ func TestReadGroupNameLengthCountsRunes(t *testing.T) {
 		t.Fatalf("mixed name should be accepted within six runes: %v", err)
 	}
 }
+
+func TestReadGroupNameLengthAllowsLatinBrandNames(t *testing.T) {
+	for _, name := range []string{"苹果商店帐号", "GPT帐号", "Claude帐号"} {
+		form := url.Values{
+			"gp_name": {name},
+			"is_open": {"1"},
+			"ord":     {"1"},
+		}
+		r := httptest.NewRequest("POST", "/admin/groups", strings.NewReader(form.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		if _, err := readGroup(r); err != nil {
+			t.Fatalf("mixed category %q should be accepted: %v", name, err)
+		}
+	}
+}
