@@ -133,7 +133,7 @@ func (db *DB) Installed(ctx context.Context) bool {
 
 type Site struct {
 	Title, Logo, TextLogo, Keywords, Description, Notice, Footer, Template, Language string
-	SearchPwd, GeeTest                                                               bool
+	SearchPwd                                                                        bool
 	ExpireMin                                                                        int
 }
 
@@ -227,7 +227,6 @@ func (db *DB) loadSite(ctx context.Context) (Site, bool) {
 	set(&s.Template, "template")
 	set(&s.Language, "language")
 	s.SearchPwd = m["is_open_search_pwd"] == "1"
-	s.GeeTest = m["is_open_geetest"] == "1"
 	if m["order_expire_time"] != "" {
 		fmt.Sscan(m["order_expire_time"], &s.ExpireMin)
 	}

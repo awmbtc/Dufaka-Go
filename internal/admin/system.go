@@ -146,7 +146,6 @@ type settingField struct {
 
 const (
 	helpImgCode = "图形验证码尚未接通，此开关暂不可用"
-	helpGeetest = "极验尚未接通，此开关暂不可用；保存设置时会清零"
 )
 
 type settingTab struct {
@@ -232,11 +231,6 @@ func settingTabs(m map[string]string) []settingTab {
 			text("from_address", "发件地址", "", ""),
 			text("from_name", "发件名称", "", ""),
 		}},
-		{Name: "极验验证", Fields: []settingField{
-			text("geetest_id", "极验id", "", ""),
-			text("geetest_key", "极验key", "", ""),
-			off("is_open_geetest", "是否开启极验", helpGeetest),
-		}},
 	}
 }
 
@@ -281,12 +275,9 @@ func applySettings(old map[string]string, r *http.Request) (map[string]string, e
 			out[f.Key] = val
 		}
 	}
-	// Disabled switches are not submitted by the browser and neither captcha
-	// is wired up. A stored is_open_geetest=1 would reject every order while
-	// the disabled control gives the owner no way to clear it, so both
-	// switches are forced off on every save.
+	// The image captcha switch is retained for database compatibility but is
+	// intentionally forced off because this build does not wire it up.
 	out["is_open_img_code"] = "0"
-	out["is_open_geetest"] = "0"
 	if strings.TrimSpace(out["title"]) == "" {
 		return out, errors.New("请填写网站标题")
 	}

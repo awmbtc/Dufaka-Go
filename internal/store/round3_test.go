@@ -436,7 +436,7 @@ func TestCheckoutIgnoresGeeTestIntegration(t *testing.T) {
 	db := &DB{Pool: pool}
 	seedShop(t, pool)
 	mustExec(t, pool, `INSERT INTO carmis(goods_id,carmi) VALUES(1,'C1')`)
-	if _, err := db.CreateOrder(context.Background(), CreateInput{GID: 1, PayID: 1, Amount: 1, Email: "g@example.com"}, Site{GeeTest: true}); err != nil {
+	if _, err := db.CreateOrder(context.Background(), CreateInput{GID: 1, PayID: 1, Amount: 1, Email: "g@example.com"}, Site{}); err != nil {
 		t.Fatalf("checkout refused with geetest on: %v", err)
 	}
 }
@@ -447,14 +447,11 @@ func TestDisableCaptchaSwitchesIntegration(t *testing.T) {
 	db := &DB{Pool: pool}
 	ctx := context.Background()
 	mustExec(t, pool, `INSERT INTO settings(key,value) VALUES('is_open_geetest','1'),('is_open_img_code','1'),('title','T'),('is_open_search_pwd','1')`)
-	if !db.Site(ctx).GeeTest {
-		t.Fatal("setup: geetest not read")
-	}
 	n, err := db.DisableCaptchaSwitches(ctx)
 	if err != nil || n != 2 {
 		t.Fatalf("changed %d rows (%v), want 2", n, err)
 	}
-	if s := db.Site(ctx); s.GeeTest || !s.SearchPwd || s.Title != "T" {
+	if s := db.Site(ctx); !s.SearchPwd || s.Title != "T" {
 		t.Fatalf("cache not dropped or wrong rows touched: %+v", s)
 	}
 	var vals string
