@@ -202,6 +202,10 @@ input[type="number"] {
     vertical-align: middle;
 }
 
+.mobile-controls {
+    display: none;
+}
+
 .main .cate {
     display: flex;
     align-items: center;
@@ -920,6 +924,165 @@ input[type="number"] {
 
     .main .goods .goods-price div {
         margin-bottom: 5px;
+    }
+
+    .main .cate {
+        display: none;
+    }
+
+    .mobile-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+        gap: 8px;
+        margin: 14px 12px 0;
+        position: relative;
+        z-index: 4;
+    }
+
+    .mobile-category {
+        min-width: 0;
+        position: relative;
+    }
+
+    .mobile-category-toggle,
+    .mobile-sort-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        height: 44px;
+        padding: 0 10px;
+        border: 1px solid rgba(60, 140, 231, .18);
+        border-radius: 12px;
+        background: #f4f8fd;
+        color: #3c8ce7;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .mobile-category-toggle:focus-visible,
+    .mobile-sort-button:focus-visible,
+    .mobile-category-option:focus-visible {
+        outline: 2px solid #2475c8;
+        outline-offset: 2px;
+    }
+
+    .mobile-category-icon {
+        display: grid;
+        flex: none;
+        gap: 3px;
+        width: 16px;
+        margin-right: 6px;
+    }
+
+    .mobile-category-icon i {
+        display: block;
+        height: 2px;
+        border-radius: 2px;
+        background: currentColor;
+    }
+
+    .mobile-category-current {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mobile-category-chevron {
+        width: 7px;
+        height: 7px;
+        margin-left: 6px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg) translateY(-2px);
+        transition: transform .18s ease;
+    }
+
+    .mobile-category-toggle[aria-expanded="true"] .mobile-category-chevron {
+        transform: rotate(225deg) translate(-1px, -1px);
+    }
+
+    .mobile-category-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        z-index: 10;
+        box-sizing: border-box;
+        min-width: 220px;
+        max-width: calc(100vw - 24px);
+        max-height: min(60vh, 320px);
+        overflow-y: auto;
+        padding: 6px;
+        border: 1px solid rgba(60, 140, 231, .16);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 28px rgba(35, 88, 142, .18);
+    }
+
+    .mobile-category-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 42px;
+        padding: 0 12px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: #545454;
+        font: inherit;
+        font-size: 13px;
+        text-align: left;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .mobile-category-option > span:first-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mobile-category-count {
+        flex: none;
+        color: #8c9aae;
+        font-size: 11px;
+    }
+
+    .mobile-category-option:hover {
+        background: rgba(60, 140, 231, .09);
+        color: #3c8ce7;
+    }
+
+    .mobile-category-option-select,
+    .mobile-category-option-select:hover {
+        background: linear-gradient(135deg, #3C8CE7 10%, #00EAFF 100%);
+        color: #fff;
+    }
+
+    .mobile-category-option-select .mobile-category-count {
+        color: rgba(255, 255, 255, .88);
+    }
+
+    .mobile-sort-button {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    .mobile-sort-button:hover,
+    .mobile-sort-button-select {
+        border-color: transparent;
+        background: linear-gradient(135deg, #3C8CE7 10%, #00EAFF 100%);
+        color: #fff;
+        box-shadow: 0 5px 10px rgba(54, 144, 248, .18);
     }
 
     .main .cate {

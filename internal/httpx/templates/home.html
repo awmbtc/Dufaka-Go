@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
 <title>首页 | {{.Site.Title}}</title>
 <link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
-<link rel="stylesheet" href="/assets/luna/main.css?v=category-pill-2">
+<link rel="stylesheet" href="/assets/luna/main.css?v=category-mobile-1">
 <link rel="shortcut icon" href="/assets/brand/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/luna/storefront.css"></head>
 <body>
@@ -45,6 +45,27 @@
     <div class="layui-row">
         <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
             <div class="main-box">
+                <div class="mobile-controls" aria-label="商品筛选">
+                    <div class="mobile-category">
+                        <button class="mobile-category-toggle" id="mobile-category-toggle" type="button" aria-expanded="false" aria-controls="mobile-category-menu">
+                            <span class="mobile-category-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+                            <span class="mobile-category-current">全部</span>
+                            <span class="mobile-category-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="mobile-category-menu" id="mobile-category-menu" role="menu" hidden>
+                            <button class="mobile-category-option mobile-category-option-select" type="button" role="menuitemradio" data-key="all" data-name="全部" aria-checked="true">
+                                <span>全部</span><span class="mobile-category-count">{{goodsCount .Groups}}</span>
+                            </button>
+                            {{range $i, $g := .Groups}}
+                            <button class="mobile-category-option" type="button" role="menuitemradio" data-key="{{$i}}" data-name="{{$g.Name}}" aria-checked="false">
+                                <span>{{$g.Name}}</span><span class="mobile-category-count">{{len $g.Goods}}</span>
+                            </button>
+                            {{end}}
+                        </div>
+                    </div>
+                    <button class="mobile-sort-button" type="button" data-sort="name" aria-pressed="false">按名称排列</button>
+                    <button class="mobile-sort-button" type="button" data-sort="price" aria-pressed="false">按价格排列</button>
+                </div>
                 <div class="cate" role="tablist" aria-label="商品分类">
                     <button class="cate-box cate-box-select" id="category-tab-all" type="button" role="tab" data-key="all" aria-selected="true" tabindex="0" aria-controls="goods-panel">
                         <span class="cate-name">全部</span>
@@ -61,7 +82,7 @@
                     <div class="goods-list" id="goods-panel" role="tabpanel" aria-live="polite" aria-labelledby="category-tab-all">
                         {{range $i, $g := .Groups}}
                         {{range $g.Goods}}
-                        <a class="goods-box" data-key="{{$i}}" href="{{if gt .InStock 0}}/buy/{{.ID}}{{else}}javascript:void(0){{end}}"{{if le .InStock 0}} style="cursor:not-allowed;"{{end}}>
+                        <a class="goods-box" data-key="{{$i}}" data-name="{{.Name}}" data-price="{{.Actual}}" href="{{if gt .InStock 0}}/buy/{{.ID}}{{else}}javascript:void(0){{end}}"{{if le .InStock 0}} style="cursor:not-allowed;"{{end}}>
                             <div class="picture"><img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" alt=""></div>
                             <div class="msg">
                                 <div class="goods-name">{{.Name}}</div>
@@ -92,6 +113,35 @@
   var tabs = Array.prototype.slice.call(document.querySelectorAll(".cate-box"));
   var cards = Array.prototype.slice.call(document.querySelectorAll(".goods-box"));
   var panel = document.getElementById("goods-panel");
+  var mobileToggle = document.getElementById("mobile-category-toggle");
+  var mobileMenu = document.getElementById("mobile-category-menu");
+  var mobileCurrent = document.querySelector(".mobile-category-current");
+  var mobileOptions = Array.prototype.slice.call(document.querySelectorAll(".mobile-category-option"));
+  var sortButtons = Array.prototype.slice.call(document.querySelectorAll(".mobile-sort-button"));
+
+  mobileOptions.sort(function (a, b) {
+    if (a.getAttribute("data-key") === "all") return -1;
+    if (b.getAttribute("data-key") === "all") return 1;
+    return a.getAttribute("data-name").localeCompare(b.getAttribute("data-name"), "zh-CN", {numeric: true, sensitivity: "base"});
+  });
+  if (mobileMenu) mobileOptions.forEach(function (option) { mobileMenu.appendChild(option); });
+
+  function closeMobileMenu() {
+    if (!mobileMenu || !mobileToggle) return;
+    mobileMenu.hidden = true;
+    mobileToggle.setAttribute("aria-expanded", "false");
+  }
+
+  function updateMobileSelection(tab) {
+    var key = tab.getAttribute("data-key");
+    var name = key === "all" ? "全部" : tab.querySelector(".cate-name").textContent;
+    if (mobileCurrent) mobileCurrent.textContent = name;
+    mobileOptions.forEach(function (option) {
+      var selected = option.getAttribute("data-key") === key;
+      option.classList.toggle("mobile-category-option-select", selected);
+      option.setAttribute("aria-checked", selected ? "true" : "false");
+    });
+  }
 
   function select(tab, moveFocus) {
     var key = tab.getAttribute("data-key");
@@ -105,6 +155,7 @@
       card.hidden = key !== "all" && card.getAttribute("data-key") !== key;
     });
     if (panel) panel.setAttribute("aria-labelledby", tab.id);
+    updateMobileSelection(tab);
     if (moveFocus) tab.focus();
   }
 
@@ -123,6 +174,60 @@
         event.preventDefault();
         select(tab, false);
       }
+    });
+  });
+
+  if (mobileToggle && mobileMenu) {
+    mobileToggle.addEventListener("click", function () {
+      var open = mobileMenu.hidden;
+      mobileMenu.hidden = !open;
+      mobileToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) mobileOptions[0].focus();
+    });
+    mobileOptions.forEach(function (option) {
+      option.addEventListener("click", function () {
+        var tab = tabs.filter(function (item) { return item.getAttribute("data-key") === option.getAttribute("data-key"); })[0];
+        if (tab) select(tab, false);
+        closeMobileMenu();
+        mobileToggle.focus();
+      });
+      option.addEventListener("keydown", function (event) {
+        var index = mobileOptions.indexOf(option);
+        var next = index;
+        if (event.key === "ArrowDown") next = (index + 1) % mobileOptions.length;
+        if (event.key === "ArrowUp") next = (index - 1 + mobileOptions.length) % mobileOptions.length;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeMobileMenu();
+          mobileToggle.focus();
+          return;
+        }
+        if (next !== index) {
+          event.preventDefault();
+          mobileOptions[next].focus();
+        }
+      });
+    });
+    document.addEventListener("click", function (event) {
+      if (!event.target.closest(".mobile-category")) closeMobileMenu();
+    });
+  }
+
+  sortButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      var mode = button.getAttribute("data-sort");
+      cards.sort(function (a, b) {
+        if (mode === "price") {
+          return parseFloat(a.getAttribute("data-price")) - parseFloat(b.getAttribute("data-price"));
+        }
+        return a.getAttribute("data-name").localeCompare(b.getAttribute("data-name"), "zh-CN", {numeric: true, sensitivity: "base"});
+      });
+      cards.forEach(function (card) { panel.appendChild(card); });
+      sortButtons.forEach(function (item) {
+        var selected = item === button;
+        item.classList.toggle("mobile-sort-button-select", selected);
+        item.setAttribute("aria-pressed", selected ? "true" : "false");
+      });
     });
   });
 })();
