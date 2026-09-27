@@ -118,3 +118,16 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 .tg-profile{min-width:0;padding:0 18px;background:#202b36;border-left:1px solid #2d3d4d}.tg-profile-cover{height:80px;margin:0 -18px;background:linear-gradient(135deg,#397ab0,#2aabee)}.tg-profile-avatar{display:grid;place-items:center;width:76px;height:76px;margin:-36px 0 12px;border:4px solid #202b36;border-radius:50%;background:#56aee5;color:#fff;font-size:34px;font-weight:700}.tg-profile h2{font-size:18px;margin:0}.tg-profile p{color:#9eb0bf;font-size:12px;margin:4px 0 18px}.tg-profile-line{height:1px;background:#2d3d4d;margin:0 -18px 12px}.tg-profile-item{display:flex;gap:10px;padding:12px 0;color:#dce7ee}.tg-profile-item>span{color:#55b4ec;font-size:20px}.tg-profile-item strong,.tg-profile-item small{display:block}.tg-profile-item small{color:#91a5b6;font-size:11px;margin-top:3px}.tg-profile-button{display:block;margin-top:20px;padding:10px;border-radius:9px;background:#2aabee;color:#fff;text-align:center;text-decoration:none;font-size:12px}
 @media(max-width:1050px){.tg-app-shell{grid-template-columns:54px 280px minmax(420px,1fr)}.tg-profile{display:none}}
 @media(max-width:700px){.tg-window{min-height:100vh}.tg-app-shell{grid-template-columns:1fr}.tg-app-rail{display:none}.tg-dialogs{display:none}.tg-chat-head{height:58px}.tg-chat-body{padding:15px 12px}.tg-windowbar{height:32px;flex-basis:32px}.tg-traffic{left:10px}.tg-window-title{font-size:12px}.tg-message-grid{max-width:none}}
+
+/* macOS Telegram Desktop parity: the shop opens as a two-column dialog window. */
+.tg-app-shell { grid-template-columns: 300px minmax(0,1fr); }
+.tg-app-rail, .tg-profile { display:none; }
+.tg-windowbar { justify-content:flex-start; padding-left:80px; }
+.tg-window-title { font-size:14px; }
+.tg-window-title .site-mark { display:none; }
+.tg-dialogs { border-right:1px solid #314354; }
+.tg-dialogs-head { height:58px; padding:0 18px; }
+.tg-dialogs-head h1 { font-size:23px; font-weight:650; }
+.tg-chat-head { height:62px; }
+.tg-chat-body { padding:22px 34px 28px; }
+@media(max-width:700px){ .tg-app-shell { grid-template-columns:1fr; } .tg-windowbar { padding-left:58px; } }
