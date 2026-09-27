@@ -2,7 +2,7 @@
 
 自动发卡商店。一个 Go 进程，数据放在 PostgreSQL。
 
-使用、修改或再分发本软件，必须保留仓库根目录的 MIT 许可声明。详见 [LICENSE](LICENSE)。
+使用、修改或再分发本软件，必须遵守仓库根目录的 GPLv3 许可和 OpenSSL exception，并保留 [LICENSE](LICENSE) 与 [LEGAL](LEGAL)。
 
 ## 手工安装
 
@@ -36,4 +36,4 @@ go run ./cmd/dufaka
 - 微信 Native 收款码在本机生成
 - cldx 钱包收款（二维码 / 应用深链，后台自动核对到账）
 
-Unicorn、Luna、Hyper 三套前台及 cldx 四参数付款已在本地实现。目前能收款的只有 `wescan`（微信扫码）和 `cldx`；其余渠道和开关的接通状态、已修复项与验证范围见 [审核报告](docs/AUDIT-2026-09-25.md)。
+Unicorn、Luna、Hyper 三套前台及 cldx 四参数付款已在本地实现。目前能收款的只有 `wescan`（微信扫码）和 `cldx`；其余渠道和开关的接通状态、已修复项与验证范围见 [审核报告](docs/AUDIT-2026-09-25.md)。小店前后台使用独立实现的 Telegram 风格界面；许可边界和来源说明见 [LEGAL](LEGAL)。
