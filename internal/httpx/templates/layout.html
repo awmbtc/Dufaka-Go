@@ -6,6 +6,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} | {{.Site.Title}}</title>
+    {{if .Site.Keywords}}<meta name="keywords" content="{{.Site.Keywords}}">{{end}}
+    {{if .Site.Description}}<meta name="description" content="{{.Site.Description}}">{{end}}
     <link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
     <style>.navbar-brand .site-mark{margin-right:10px}</style>
     <link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
