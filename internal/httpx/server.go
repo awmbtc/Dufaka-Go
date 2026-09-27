@@ -220,7 +220,7 @@ func (a *App) viewStatus(w http.ResponseWriter, status int, name string, data an
 func (a *App) render(w io.Writer, name string, data any) error {
 	chosen := name
 	if m, ok := data.(map[string]any); ok {
-		if site, ok := m["Site"].(store.Site); ok && (site.Template == "luna" || site.Template == "hyper") {
+		if site, ok := m["Site"].(store.Site); ok && name != "home.html" && (site.Template == "luna" || site.Template == "hyper") {
 			alt := site.Template + "_" + name
 			if a.tpl.Lookup(alt) != nil {
 				chosen = alt
