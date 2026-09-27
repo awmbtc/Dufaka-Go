@@ -190,11 +190,7 @@ func settingTabs(m map[string]string) []settingTab {
 			text("text_logo", "文字LOGO", "", ""),
 			text("keywords", "网站关键词", "", ""),
 			area("description", "网站描述", ""),
-			{Key: "template", Label: "站点模板", Kind: "select", Value: settingValue(m, "template", "unicorn"), Options: []opt{
-				{Value: "unicorn", Label: "Unicorn"},
-				{Value: "luna", Label: "Luna"},
-				{Value: "hyper", Label: "Hyper"},
-			}},
+
 			{Key: "language", Label: "站点语言", Kind: "select", Value: settingValue(m, "language", "zh_CN"), Options: []opt{
 				{Value: "zh_CN", Label: "简体中文"},
 				{Value: "zh_TW", Label: "繁体中文"},
@@ -280,11 +276,6 @@ func applySettings(old map[string]string, r *http.Request) (map[string]string, e
 	out["is_open_img_code"] = "0"
 	if strings.TrimSpace(out["title"]) == "" {
 		return out, errors.New("请填写网站标题")
-	}
-	switch out["template"] {
-	case "unicorn", "luna", "hyper":
-	default:
-		return out, errors.New("请选择站点模板")
 	}
 	switch out["language"] {
 	case "zh_CN", "zh_TW":

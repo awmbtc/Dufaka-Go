@@ -108,7 +108,6 @@ func TestApplySettings(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/admin/settings", nil)
 	req.Form = url.Values{
 		"title":              {"示例店"},
-		"template":           {"hyper"},
 		"language":           {"zh_CN"},
 		"order_expire_time":  {"5"},
 		"driver":             {"smtp"},
@@ -120,7 +119,7 @@ func TestApplySettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got["title"] != "示例店" || got["template"] != "hyper" || got["host"] != "smtp.example.com" || got["password"] != "kept" || got["is_open_search_pwd"] != "1" {
+	if got["title"] != "示例店" || got["host"] != "smtp.example.com" || got["password"] != "kept" || got["is_open_search_pwd"] != "1" {
 		t.Fatalf("%v", got)
 	}
 	req.Form.Set("title", "")
@@ -161,7 +160,7 @@ func TestPagesContainOriginalFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	body = buf.String()
-	for _, field := range []string{"基本设置", "订单推送配置", "邮件服务", `name="title"`, `name="template"`, `name="order_expire_time"`, `name="is_open_search_pwd"`, `name="driver"`, `name="host"`} {
+	for _, field := range []string{"基本设置", "订单推送配置", "邮件服务", `name="title"`, `name="order_expire_time"`, `name="is_open_search_pwd"`, `name="driver"`, `name="host"`} {
 		if !strings.Contains(body, field) {
 			t.Errorf("settings missing %s", field)
 		}

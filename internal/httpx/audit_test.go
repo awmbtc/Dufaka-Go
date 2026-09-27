@@ -41,7 +41,7 @@ func TestRichTextAndAppLink(t *testing.T) {
 		t.Fatalf("bad sanitized HTML %s", clean)
 	}
 	app, _ := New(nil, "http://localhost", "")
-	for _, theme := range []string{"unicorn", "luna", "hyper"} {
+	for _, theme := range []string{"telegram"} {
 		var buf bytes.Buffer
 		data := map[string]any{"Site": store.Site{Title: "Test", Template: theme}, "Order": store.Order{SN: "ORDER", Status: 1}, "Direct": true, "Cldx": "1", "PayDeadline": time.Now().Add(time.Hour).Unix(), "AppLink": template.URL("clodex://pay?to=shop&amount=10000&order=ORDER&exp=9999999999")}
 		if err := app.render(&buf, "cldxpay.html", data); err != nil {
@@ -50,10 +50,7 @@ func TestRichTextAndAppLink(t *testing.T) {
 		if strings.Contains(buf.String(), "ZgotmplZ") || !strings.Contains(buf.String(), "clodex://pay?") {
 			t.Fatalf("%s lost app link", theme)
 		}
-		if theme == "luna" && strings.Contains(buf.String(), "navbar-expand-lg") {
-			t.Fatal("luna payment uses bootstrap shell")
-		}
-	}
+			}
 }
 
 func TestExportAuditPages(t *testing.T) {
@@ -68,7 +65,7 @@ func TestExportAuditPages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, theme := range []string{"unicorn", "luna", "hyper"} {
+	for _, theme := range []string{"telegram"} {
 		site := store.Site{Title: "Clodex小店", TextLogo: "Clodex小店", Template: theme, SearchPwd: true, ExpireMin: 30, Notice: "<p>欢迎来到 <strong>Clodex 小店</strong>，请按商品说明购买。</p>", Footer: "<p>客服说明 · 本地审核环境</p>"}
 		g := store.Good{ID: 1, Name: "会员月卡：长标题显示与自动发货测试", Type: 2, InStock: 12, BuyLimit: 5, Actual: 1990, Retail: 2990, Wholesale: "3=15.00\n10=12.00", Other: "account=账号=1", Prompt: "<p>请确认商品适用于你的账号。</p>", Description: "<h3>使用说明</h3><p>购买后请在订单详情查看卡密。</p>"}
 		o := store.Order{SN: "AUDIT-ORDER-2026", Title: g.Name, Amount: 1, Type: 2, Actual: 1990, GoodsPrice: 1990, Status: 1, Email: "audit@example.com", Created: time.Now(), Info: "AUDIT-CARD-001"}
