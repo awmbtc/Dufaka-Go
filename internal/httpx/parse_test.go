@@ -36,7 +36,7 @@ func TestTemplatesParse(t *testing.T) {
 				t.Fatalf("%s %s leaked a template marker", theme, name)
 			}
 			if theme == "luna" && name == "home.html" {
-				if !bytes.Contains(buf.Bytes(), []byte("支付测试")) || !bytes.Contains(buf.Bytes(), []byte("cate-box")) {
+				if !bytes.Contains(buf.Bytes(), []byte("支付测试")) || !bytes.Contains(buf.Bytes(), []byte("tg-workspace")) {
 					t.Fatalf("luna home did not render the category and product")
 				}
 			}
@@ -44,7 +44,7 @@ func TestTemplatesParse(t *testing.T) {
 				t.Fatalf("luna buy hid the pay method name")
 			}
 			if theme == "hyper" && name == "home.html" {
-				if !bytes.Contains(buf.Bytes(), []byte("home-card")) || !bytes.Contains(buf.Bytes(), []byte(`id="group-1"`)) {
+				if !bytes.Contains(buf.Bytes(), []byte("tg-goods-item")) || !bytes.Contains(buf.Bytes(), []byte(`id="group-1"`)) {
 					t.Fatalf("hyper home missing a category pane")
 				}
 			}
