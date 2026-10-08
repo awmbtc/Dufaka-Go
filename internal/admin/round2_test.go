@@ -315,7 +315,7 @@ func TestPaysPageConfigStatus(t *testing.T) {
 	}
 	body := buf.String()
 	for _, s := range []string{`id="pay-config-status"`, "配置状态", `<span class="banner err">缺少：appid（WECHAT_PAY_APP_ID）</span>`, `<span class="banner ok">钱包密钥已配置</span>`,
-		"wescan 渠道：微信支付 APIv3 密钥（32 位），填写后优先于环境变量 WECHAT_PAY_API_V3_KEY；cldx 渠道留空"} {
+		"wescan 渠道：微信支付 APIv3 密钥（32 位），填写后优先于环境变量 WECHAT_PAY_API_V3_KEY；cldx、usdt 渠道留空"} {
 		if !strings.Contains(body, s) {
 			t.Errorf("pays page missing %q", s)
 		}

@@ -66,6 +66,7 @@ func (u USDT) call(ctx context.Context, method, path string, data any) (USDTInvo
 	}
 	req.Header.Set("Authorization", "Bearer "+u.Secret)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Clodex-Shop/1.0")
 	client := u.HTTP
 	if client == nil {
 		client = &http.Client{Timeout: 7 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
