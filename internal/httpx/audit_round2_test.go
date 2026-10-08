@@ -38,8 +38,11 @@ func TestCreateOrderStoresClientIP(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := installed(t, app)
+	created := 0
 	create := func(remote, real string) (string, *httptest.ResponseRecorder) {
-		req := httptest.NewRequest("POST", "http://shop.test/create-order", strings.NewReader("gid=2&payway=1&by_amount=1&email=ip%40example.com"))
+		// A fresh email per order: one email may hold only a few unpaid orders (SHOP-01).
+		created++
+		req := httptest.NewRequest("POST", "http://shop.test/create-order", strings.NewReader(fmt.Sprintf("gid=2&payway=1&by_amount=1&email=ip%d%%40example.com", created)))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.RemoteAddr = remote
 		if real != "" {
@@ -349,7 +352,8 @@ func cldxOrders(t *testing.T, app *App, n int) []string {
 	}
 	var sns []string
 	for i := 0; i < n; i++ {
-		o, err := app.live().CreateOrder(ctx, store.CreateInput{GID: 9, PayID: 1, Amount: 1, Email: "pool@example.com"}, store.Site{})
+		// A fresh email per order: one email may hold only a few unpaid orders (SHOP-01).
+		o, err := app.live().CreateOrder(ctx, store.CreateInput{GID: 9, PayID: 1, Amount: 1, Email: fmt.Sprintf("pool%d@example.com", i)}, store.Site{})
 		if err != nil {
 			t.Fatal(err)
 		}

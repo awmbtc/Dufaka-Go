@@ -50,6 +50,8 @@ web/assets/            前台静态文件（`/assets/`）
 sql/001_schema.sql     全量建表
 sql/002_cldx_quote.sql 已有站点：cldx 报价与截止列
 sql/003_cldx_poll.sql  已有站点：cldx 轮询轮转列与两个部分索引（CONCURRENTLY，须在事务外执行）
+sql/004_stock_owed.sql 已有站点：人工处理订单欠库存标记列
+sql/005_unpaid_quota.sql 已有站点：未付款配额用的 buy_source 列与部分索引（CONCURRENTLY，须在事务外执行）
 .github/workflows/test.yml  CI：vet、-race 测试（PostgreSQL 17 服务）、govulncheck
 ```
 
@@ -99,6 +101,11 @@ sql/003_cldx_poll.sql  已有站点：cldx 轮询轮转列与两个部分索引�
 - 该商品有循环卡密时，数量只能是 1。
 - 优惠码必须属于该商品、处于启用、剩余次数大于 0。
 - 人工商品按配置检查额外输入框。内容写入订单详情，一行一条，形式为「说明:值」。
+
+本版本另加两道防线，因为任何人都能匿名下单，而未付款订单在到期前一直占着库存：
+
+- 未付款配额（`store.unpaidQuota`，在下单事务里检查）：同一来源地址（`netx.LimiterKey`：IPv4 单个地址、IPv6 按 /64，存进 `orders.buy_source`）最多 5 笔、同一邮箱（不分大小写）最多 3 笔「未付款且未到期」的订单，超出提示「未付款订单过多，请先完成支付或等待订单过期后再下单」。地址比邮箱宽，是给同一运营商 NAT 下的买家留余量。已付款、已过期的订单不计入。反代没传客户端地址时只按邮箱算，不把代理自己的地址当成所有人共用的额度。
+- 下单限速（`limitOrders`）：每个地址每 5 分钟最多 10 次下单请求，超出返回 429「下单过于频繁，请稍后再试」。
 - 订单记录的 `buy_ip` 由 `netx.ClientIP` 决定：只有 TCP 对端是受信任的代理时才读代理头，只读 `DUFAKA_REAL_IP_HEADER` 指定的一个头（默认 `X-Real-IP`；设为 `X-Forwarded-For` 时只取最后一段），值必须能解析为 IP；其他情况一律用对端地址。受信任代理默认只有本机回环地址（nginx 与本进程同机）；代理在别的机器上时用环境变量 `DUFAKA_TRUSTED_PROXIES` 指定（写法见 `internal/netx`）。登录与下单的按 IP 限速用 `netx.LimiterKey`：IPv4 按单个地址，IPv6 按 /64 网段。
 
 按邮箱查询：开启查询密码时必须提交密码，命中的订单完整显示。查询密码关闭时，邮箱本身不能当凭证：只列出订单，订单号打码显示，卡密内容不给；完整内容仍可凭订单号打开，或由下单的浏览器（cookie）查看。

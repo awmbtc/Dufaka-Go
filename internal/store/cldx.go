@@ -24,12 +24,13 @@ const (
 	cldxLateShare = cldxPollLimit - cldxLiveShare
 )
 
-// cldxIndexes are the two partial indexes behind the two WaitingSNs buckets.
-// Their definitions are repeated in install/schema.sql, sql/001_schema.sql and
-// sql/003_cldx_poll.sql.
+// cldxIndexes are the two partial indexes behind the two WaitingSNs buckets
+// (repeated in install/schema.sql, sql/001_schema.sql and sql/003_cldx_poll.sql)
+// and the unpaid-order index behind the checkout quota (sql/005_unpaid_quota.sql).
 var cldxIndexes = []struct{ name, ddl string }{
 	{"idx_orders_cldx_live", `CREATE INDEX IF NOT EXISTS idx_orders_cldx_live ON orders (cldx_polled_at NULLS FIRST, id) WHERE status = 1 AND cldx_minor IS NOT NULL AND deleted_at IS NULL`},
 	{"idx_orders_cldx_late", `CREATE INDEX IF NOT EXISTS idx_orders_cldx_late ON orders (cldx_expires_at) WHERE status = -1 AND cldx_minor IS NOT NULL AND deleted_at IS NULL`},
+	{"idx_orders_unpaid", `CREATE INDEX IF NOT EXISTS idx_orders_unpaid ON orders (created_at) WHERE status = 1 AND deleted_at IS NULL`},
 }
 
 // EnsureCldxSchema brings an installed site's orders table up to what the cldx
@@ -78,12 +79,13 @@ func (db *DB) EnsureCldxSchema(ctx context.Context) error {
 }
 
 // schemaColumns are the orders columns added after the original dujiaoka schema; their
-// definitions are repeated in install/schema.sql, sql/001_schema.sql and sql/002-004.
+// definitions are repeated in install/schema.sql, sql/001_schema.sql and sql/002-005.
 var schemaColumns = []struct{ name, ddl string }{
 	{"cldx_minor", "bigint"},
 	{"cldx_expires_at", "bigint"},
 	{"cldx_polled_at", "bigint"},
 	{"stock_owed", "boolean NOT NULL DEFAULT false"},
+	{"buy_source", "varchar(64)"},
 }
 
 // schemaLockTimeout bounds how long one upkeep statement waits for its table lock, so a

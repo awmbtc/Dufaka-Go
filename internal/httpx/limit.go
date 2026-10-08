@@ -18,9 +18,12 @@ const (
 	lookupLimit    = 30
 	lookupOverflow = 300 // shared by all new addresses while the table is full
 	pollLimit      = 120
+	orderLimit     = 10  // checkouts; the store also caps unpaid orders per address and email
+	orderOverflow  = 100 // shared by all new addresses while the table is full
 	limitWindow    = 5 * time.Minute
 	limiterMaxIPs  = 20000
 	tooManyText    = "查询过于频繁，请稍后再试"
+	tooManyOrders  = "下单过于频繁，请稍后再试"
 )
 
 // ipLimiter counts requests per client address (netx.LimiterKey: IPv4 as is, IPv6 per
@@ -137,6 +140,18 @@ func (a *App) limitLookups(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if key := limiterKey(r); key != "" && !a.lookups.allow(key) {
 			a.failStatus(w, r, http.StatusTooManyRequests, tooManyText)
+			return
+		}
+		next(w, r)
+	}
+}
+
+// limitOrders guards checkout: every order reserves stock until it is paid or
+// expires, so one address cannot place orders without bound (SHOP-01).
+func (a *App) limitOrders(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if key := limiterKey(r); key != "" && !a.orders.allow(key) {
+			a.failStatus(w, r, http.StatusTooManyRequests, tooManyOrders)
 			return
 		}
 		next(w, r)
