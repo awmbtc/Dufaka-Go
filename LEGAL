@@ -1,0 +1,23 @@
+This project contains a Telegram-inspired web interface implemented for Dufaka-Go.
+
+The visual reference and license boundary are Telegram Desktop:
+https://github.com/telegramdesktop/tdesktop
+
+Telegram Desktop is distributed under the GNU General Public License v3 with
+an OpenSSL exception. This project does not copy Telegram Desktop's C++/Qt
+implementation or its bundled image assets. The Dufaka-Go templates and CSS
+are adapted independently for a Go HTML storefront and administration panel.
+
+Telegram Desktop notice:
+
+Copyright (c) 2014-2026 The Telegram Desktop Authors.
+
+Telegram Desktop is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+In addition, as a special exception, the copyright holders give permission to
+link the code of portions of that program with the OpenSSL library.
+
+Full license: https://github.com/telegramdesktop/tdesktop/blob/dev/LICENSE

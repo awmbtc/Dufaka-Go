@@ -216,7 +216,6 @@ func siteSettings(f Form) [][2]string {
 	return [][2]string{
 		{"title", f.Title},
 		{"text_logo", f.Title},
-		{"template", "unicorn"},
 		{"language", "zh_CN"},
 		{"order_expire_time", "5"},
 		{"is_open_search_pwd", "1"},

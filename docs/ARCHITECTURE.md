@@ -2,7 +2,7 @@
 
 Dufaka-Go 按原发卡站 2.0.6（`assimon/dujiaoka`，提交 `e846d12`）的顾客页面和店主功能，用 Go 与 PostgreSQL 重新实现。页面样式沿用原站的样式文件。仓库名 Dufaka-Go。
 
-当前验收口径（2026-09-25）：前台三套皮肤按原站页面布局和外观核对，保留 Dufaka-Go 品牌。后台保留现有 macOS 27 风格，可修复布局、显示和功能缺失，不对标原站后台外观。本文以代码为准；`AUDIT-2026-09-23.md`、`AUDIT-2026-09-25.md` 记录审计发现与修复。
+当前验收口径（2026-09-27）：前台固定使用 Luna 蓝色页面布局和外观，保留 Dufaka-Go 品牌。后台保留现有 macOS 27 风格，可修复布局、显示和功能缺失，不对标原站后台外观。本文以代码为准；`AUDIT-2026-09-23.md`、`AUDIT-2026-09-25.md` 记录审计发现与修复。
 
 ## 进程
 
@@ -12,13 +12,13 @@ Dufaka-Go 按原发卡站 2.0.6（`assimon/dujiaoka`，提交 `e846d12`）的顾
 
 ```
 浏览器 → nginx → Dufaka-Go → PostgreSQL
-                 ├── 前台三套模板
+                 ├── 前台 Luna 蓝色模板
                  ├── 后台 /admin
                  ├── 支付通知
                  └── 过期与 cldx 轮询
 ```
 
-启动配置只有监听地址、数据库连接和会话密钥（`dufaka.json` 或环境变量 `DUFAKA_ADDR`、`DUFAKA_DATABASE_URL`、`DUFAKA_SESSION_KEY`、`DUFAKA_BASE_URL`；cldx 钱包用 `WALLET_MERCHANT_SECRET` 等）。站名、模板、邮件和推送都在设置表里，由原来的「系统设置」页修改。
+启动配置只有监听地址、数据库连接和会话密钥（`dufaka.json` 或环境变量 `DUFAKA_ADDR`、`DUFAKA_DATABASE_URL`、`DUFAKA_SESSION_KEY`、`DUFAKA_BASE_URL`；cldx 钱包用 `WALLET_MERCHANT_SECRET` 等）。站名、邮件和推送都在设置表里，由原来的「系统设置」页修改。
 
 启动顺序：打开连接池后先 `Ping`（5 秒超时）。连不上时把「请检查 DUFAKA_DATABASE_URL」写进日志，下面所有启动步骤都跳过（日志写明跳过），请求侧仍按未安装处理（进入安装页），数据库恢复后自动接上。连得上时依次执行，每一步单独限时 10 秒，超时或出错只记日志、不阻塞启动：
 
@@ -26,7 +26,6 @@ Dufaka-Go 按原发卡站 2.0.6（`assimon/dujiaoka`，提交 `e846d12`）的顾
 2. `EnsureCldxSchema`：只要站点已安装就执行，与是否配置钱包无关。补齐 `orders` 的 cldx 三列和两个轮询部分索引，删除旧索引 `idx_orders_cldx_wait`；已经齐全的步骤直接跳过，不锁表；不依赖 `pays` 表上的任何约束。
 3. `EnsureCldxPay`：只在配了 `WALLET_MERCHANT_SECRET` 时执行，用 `INSERT … WHERE NOT EXISTS` 补写 cldx 渠道行（不用 `ON CONFLICT`，老库 `pay_check` 没有唯一约束也能执行）。
 4. `DisableUnwiredPays`：把所有启用了但本版本没有收银台的支付渠道置为停用，并记录停用了几行。
-5. `DisableCaptchaSwitches`：把 `is_open_geetest`、`is_open_img_code` 中不为 `0` 的行改成 `0`，记录改了几行，并使站点设置缓存失效。
 
 缺 `DUFAKA_SESSION_KEY` 的已安装站点直接退出。
 
@@ -38,7 +37,7 @@ Dufaka-Go 按原发卡站 2.0.6（`assimon/dujiaoka`，提交 `e846d12`）的顾
 
 ```
 cmd/dufaka/            进程入口、启动检查、后台任务循环
-internal/httpx/        前台路由、安全头、静态文件、cldx 收银与轮询；templates/ 内嵌三套皮肤模板
+internal/httpx/        前台路由、安全头、静态文件、cldx 收银与轮询；templates/ 内嵌 Luna 蓝色页面模板
 internal/store/        数据访问：下单、结算、发货、过期、支付渠道、站点设置缓存
 internal/admin/        后台
 internal/order/        计价（分为单位）、优惠码规则
@@ -55,7 +54,7 @@ sql/005_unpaid_quota.sql 已有站点：未付款配额用的 buy_source 列与�
 .github/workflows/test.yml  CI：vet、-race 测试（PostgreSQL 17 服务）、govulncheck
 ```
 
-三套前台皮肤各自保留，模板以 `internal/httpx/templates` 内嵌进二进制。系统设置里切换模板后，下一页使用对应皮肤。后台按原站 Dcat 的菜单、列表、表单和按钮重做，不换成另一套管理界面。
+前台只保留 Luna 蓝色页面模板，模板以 `internal/httpx/templates` 内嵌进二进制；系统设置不再提供主题切换。后台按原站 Dcat 的菜单、列表、表单和按钮重做，不换成另一套管理界面。
 
 静态文件只从 `web/assets` 提供：目录（以 `/` 结尾或解析为目录的路径）一律 404，任何以 `.` 开头的路径段（`.git`、`.env`、`._*`）也 404；`index.html` 不是可服务的静态文件名。`internal/httpx` 和内嵌模板不在任何可访问路径上。所有响应带安全头：`X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY`、`Referrer-Policy: strict-origin-when-cross-origin`、`Content-Security-Policy: frame-ancestors 'none'`；请求经 HTTPS（直连 TLS 或代理带 `X-Forwarded-Proto: https`）时另加 `Strict-Transport-Security`。后台的非 GET 请求校验 `Origin` / `Sec-Fetch-Site`，跨站一律 403。
 
@@ -81,13 +80,13 @@ sql/005_unpaid_quota.sql 已有站点：未付款配额用的 buy_source 列与�
 | POST | `/pay/wepay/notify_url` | 微信支付通知 |
 | GET | `/cldx/pay?order=订单号` | cldx 二维码落点：只接受订单号，从库里锁定的报价重建钱包参数后 302 到 `clodex://pay?...`，App 必须跟随这个 302。订单未知、未报价、已过期或不是 cldx 渠道一律 404 |
 
-没有 `/check-geetest`，也没有 `/cldx/{id}`：二维码里只有订单号，收款方、金额和截止时间永远来自小店自己的配置和已锁定的报价，链接被改也改不了收款方。
+没有验证码接口，也没有 `/cldx/{id}`：二维码里只有订单号，收款方、金额和截止时间永远来自小店自己的配置和已锁定的报价，链接被改也改不了收款方。
 
-下单字段名不变：`gid`、`email`、`payway`、`by_amount`、`search_pwd`、`coupon_code`，以及人工商品的额外输入框。图形验证码和极验两个开关在本版本不可用：系统设置页显示为关闭且不可勾选，保存时一律写成 `0`，已安装站点每次启动也会把库里残留的 `1` 清成 `0`（`DisableCaptchaSwitches`）；下单（`store.CreateOrder`）完全不看这两个开关，`img_verify_code` 与极验字段被忽略。`Site.GeeTest` 只用于显示。
+下单字段名不变：`gid`、`email`、`payway`、`by_amount`、`search_pwd`、`coupon_code`，以及人工商品的额外输入框。系统设置不包含验证码或主题切换字段。
 
 下单成功后写入 cookie `dujiaoka_orders`，值是订单号数组。浏览器查询读这个 cookie。
 
-每个皮肤都包含首页、购买、结算、订单详情、查询、二维码支付和错误页。文案有简体和繁体。站名、logo、关键词、公告、页脚、默认模板和 Google 翻译开关都来自系统设置。
+Luna 页面包含首页、购买、结算、订单详情、查询、二维码支付和错误页。文案有简体和繁体。站名、logo、关键词、公告、页脚和 Google 翻译开关都来自系统设置。
 
 下单校验与原站相同：
 
@@ -148,7 +147,7 @@ sql/005_unpaid_quota.sql 已有站点：未付款配额用的 buy_source 列与�
 
 列表、筛选、新增、编辑、删除和恢复软删除都保留。支付渠道表单含名称、标识、跳转或扫码、电脑或手机或全部、商户号、商户 KEY、商户密钥、处理路由、启用。
 
-系统设置仍是四个标签：基本设置、订单推送、邮件、极验。字段名不变，例如 `title`、`template`、`order_expire_time`、`is_open_search_pwd`、`is_open_geetest`、`driver`、`host`。其中 `is_open_img_code` 与 `is_open_geetest` 在本版本固定存为 `0`，页面上不可打开，启动时也会清成 `0`，下单不看它们。保存后前台的站点设置缓存立即失效。
+系统设置包含基本设置、订单推送和邮件服务三个标签；不再提供主题或验证码字段。保存后前台的站点设置缓存立即失效。
 
 订单详情页对「异常」（状态 6）的自动发卡订单提供「重新发货」：店主补卡后再走一次结算路径。卡仍不够时返回「库存不足」，订单原样不动（详情、交易号都不改，也不会写入占位交易号 `manual`）；补发成功时交易号为空的订单才记为 `manual`。人工处理商品不提供重新发货（「仅自动发卡商品支持重新发货」），由店主按订单人工处理。cldx 的状态 6 订单不会再被轮询（轮询只看 1 和 -1），补卡后必须由店主在后台点「重新发货」。
 
@@ -218,7 +217,7 @@ sql/005_unpaid_quota.sql 已有站点：未付款配额用的 buy_source 列与�
 
 后台表是 `admin_users`、`admin_roles`、`admin_permissions`、`admin_menu`，以及原站的角色关联表。管理员密码使用 bcrypt。
 
-`settings` 保存系统设置，键与原表单相同。后台仍是原来的系统设置页。配置不再只放在缓存里，因此清缓存不会丢掉站名、模板和邮件参数。
+`settings` 保存系统设置，键与原表单相同。后台仍是原来的系统设置页。配置不再只放在缓存里，因此清缓存不会丢掉站名和邮件参数。
 
 `orders` 另有 cldx 三列：`cldx_minor`（锁定报价）、`cldx_expires_at`（截止）、`cldx_polled_at`（上次轮询时间），以及两个部分索引 `idx_orders_cldx_live`、`idx_orders_cldx_late`（见 cldx 一节；取代旧的 `idx_orders_cldx_wait`）。已有站点按顺序执行 `sql/002_cldx_quote.sql`、`sql/003_cldx_poll.sql`；003 用 `CREATE INDEX CONCURRENTLY IF NOT EXISTS` 和 `DROP INDEX … IF EXISTS`，必须在事务外执行（例如 `psql -f`，不要加 `--single-transaction`），建索引时不挡下单写入。新安装的 `001_schema.sql` 已包含（普通 `CREATE INDEX IF NOT EXISTS`）。进程启动时 `EnsureCldxSchema` 也会补建缺的列和索引，但用的是普通 `CREATE INDEX`，建索引期间会挡住 `orders` 的写入，所以订单多的站点应先手动执行 003。
 
@@ -268,7 +267,7 @@ sql/005_unpaid_quota.sql 已有站点：未付款配额用的 buy_source 列与�
 
 ## 对照
 
-上线前逐页对照 unicorn、luna、hyper 和后台每个菜单。同一输入必须得到同一结果：价格、拒绝原因、订单状态、卡密是否售出、优惠券剩余次数、邮件占位符、支付二维码和三种查询方式。
+上线前逐页对照 Luna 蓝色前台和后台每个菜单。同一输入必须得到同一结果：价格、拒绝原因、订单状态、卡密是否售出、优惠券剩余次数、邮件占位符、支付二维码和三种查询方式。
 
 内部改动只纠正原来会超卖、重复通知被当成失败、配置只存在缓存里，以及审计列出的安全与一致性问题。成功路径上的页面和功能不改变。
 

@@ -1,4 +1,4 @@
-/* Shared bounds and interaction fixes; each storefront retains its own theme. */
+/* Shared bounds and interaction fixes for the Luna storefront. */
 img { max-width: 100%; }
 .rich-content, .intro, .purchase-prompt, .wholesale-prices { overflow-wrap: anywhere; }
 .rich-content img, .intro img { height: auto; }

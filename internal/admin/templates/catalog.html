@@ -5,7 +5,7 @@
 <form class="card" method="post" action="{{.Action}}">
 <input type="hidden" name="_token" value="{{.CSRF}}">
 <h2>{{if .Form.ID}}编辑分类{{else}}新增分类{{end}}</h2>
-<div class="field"><label for="gp_name">分类名称</label><input id="gp_name" name="gp_name" value="{{.Form.Name}}" required maxlength="200"></div>
+<div class="field"><label for="gp_name">分类名称</label><input id="gp_name" name="gp_name" value="{{.Form.Name}}" required maxlength="40"><p class="help">中文最多 6 个字符，英文品牌名可保留</p></div>
 <div class="field"><label for="is_open">是否启用</label>
 <select id="is_open" name="is_open">
 <option value="1" {{if eq .Form.Open 1}}selected{{end}}>启用</option>
