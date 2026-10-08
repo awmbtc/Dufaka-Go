@@ -1,4 +1,6 @@
 /* Shared bounds and interaction fixes for the Luna storefront. */
+/* Allow scrolling and pinch zoom, without double-tap page zoom. */
+html { touch-action: manipulation; }
 img { max-width: 100%; }
 .rich-content, .intro, .purchase-prompt, .wholesale-prices { overflow-wrap: anywhere; }
 .rich-content img, .intro img { height: auto; }
@@ -19,3 +21,9 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 @media (max-width:575px) { .header .info { max-width:70vw; } .pay-type { max-width:100%; } }
 .query-password { display:block; margin:12px 0; }
 .query-password input { margin-top:6px; }
+
+@media (max-width: 768px), (pointer: coarse) {
+    /* Keep editable text readable without iOS focus zoom; retain pinch zoom. */
+    input:not([type="hidden"]), textarea, select, .input input { font-size: 16px; }
+    .input input:not(.pay-num) { min-height: 44px; }
+}
