@@ -26,6 +26,7 @@ import (
 
 	"dufaka/internal/admin"
 	"dufaka/internal/install"
+	"dufaka/internal/netx"
 	"dufaka/internal/order"
 	"dufaka/internal/pay"
 	"dufaka/internal/store"
@@ -44,6 +45,7 @@ type App struct {
 	receipts   *receiptThrottle
 	lookups    *ipLimiter // order lookups by number / email: 30 per 5 minutes per address
 	polls      *ipLimiter // cashier status polls: 120 per 5 minutes per address
+	orders     *ipLimiter // checkouts: 10 per 5 minutes per address
 	hiddenPays sync.Map   // pay id → struct{}: "channel hidden" already logged
 }
 
@@ -89,6 +91,7 @@ func New(db *store.DB, base, configPath string) (*App, error) {
 		receipts: newReceiptThrottle(),
 		lookups:  newIPLimiter("订单查询", lookupLimit, lookupOverflow, limitWindow),
 		polls:    newIPLimiter("订单状态轮询", pollLimit, 0, limitWindow),
+		orders:   newIPLimiter("下单", orderLimit, orderOverflow, limitWindow),
 		wallet: pay.Wallet{
 			Base:       envOr("WALLET_BASE_URL", "https://cldx-wallet-zh432gkopa-de.a.run.app"),
 			MerchantID: merchant,
@@ -132,7 +135,7 @@ func (a *App) Handler() http.Handler {
 	})
 	mux.HandleFunc("GET /{$}", a.home)
 	mux.HandleFunc("GET /buy/{id}", a.buy)
-	mux.HandleFunc("POST /create-order", a.create)
+	mux.HandleFunc("POST /create-order", a.limitOrders(a.create))
 	mux.HandleFunc("GET /bill/{sn}", a.bill)
 	mux.HandleFunc("GET /detail-order-sn/{sn}", a.limitLookups(a.detail))
 	mux.HandleFunc("GET /order-search", a.searchPage)
@@ -312,10 +315,14 @@ func (a *App) create(w http.ResponseWriter, r *http.Request) {
 			extra[k] = v[0]
 		}
 	}
+	source := ""
+	if ip, known := netx.ClientAddr(r); known {
+		source = netx.LimiterKey(ip)
+	}
 	o, err := a.live().CreateOrder(r.Context(), store.CreateInput{
 		GID: gid, PayID: payID, Amount: amt, Email: r.FormValue("email"),
 		SearchPwd: r.FormValue("search_pwd"), Coupon: r.FormValue("coupon_code"),
-		IP: clientIP(r), Extra: extra,
+		IP: clientIP(r), Source: source, Extra: extra,
 	}, a.live().Site(r.Context()))
 	if err != nil {
 		a.failErr(w, r, "创建订单", err)

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/mail"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -401,7 +402,11 @@ type Order struct {
 type CreateInput struct {
 	GID, PayID, Amount           int
 	Email, SearchPwd, Coupon, IP string
-	Extra                        map[string]string
+	// Source is the buyer's address block for the unpaid-order quota
+	// (netx.LimiterKey), or "" when the address is not known (a proxy that
+	// forwards none), so the proxy's own address is never counted for everyone.
+	Source string
+	Extra  map[string]string
 }
 
 // CreateOrder validates a checkout, reserves its stock and writes the order in
@@ -459,6 +464,10 @@ func (db *DB) createOrder(ctx context.Context, in CreateInput, site Site) (Order
 	var payCheck string
 	if err = tx.QueryRow(ctx, `SELECT is_open, pay_check FROM pays WHERE id=$1 AND deleted_at IS NULL`, in.PayID).Scan(&openPay, &payCheck); err != nil || openPay != 1 || !CashierReady(payCheck) {
 		return Order{}, RuleError{Msg: "支付方式不可用"}
+	}
+	source := in.Source
+	if err = unpaidQuota(ctx, tx, source, in.Email, site.ExpireMin); err != nil {
+		return Order{}, err
 	}
 	// Serialise checkouts, payments and expiry of this goods (see settle for
 	// the lock order). FOR NO KEY UPDATE, not FOR UPDATE: it still excludes the
@@ -543,11 +552,11 @@ func (db *DB) createOrder(ctx context.Context, in CreateInput, site Site) (Order
 	err = tx.QueryRow(ctx, `
 		INSERT INTO orders (order_sn, goods_id, coupon_id, title, type, goods_price, buy_amount,
 			coupon_discount_price, wholesale_discount_price, total_price, actual_price, search_pwd,
-			email, info, pay_id, buy_ip, status, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,1,now(),now())
+			email, info, pay_id, buy_ip, buy_source, status, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,1,now(),now())
 		RETURNING id`,
 		sn, g.ID, couponID, g.Name, g.Type, g.Actual.Yuan(), in.Amount, coff.Yuan(), woff.Yuan(), total.Yuan(), actual.Yuan(),
-		in.SearchPwd, in.Email, info, in.PayID, in.IP).Scan(&id)
+		in.SearchPwd, in.Email, info, in.PayID, in.IP, source).Scan(&id)
 	if err != nil {
 		return Order{}, err
 	}
@@ -566,6 +575,51 @@ func (db *DB) createOrder(ctx context.Context, in CreateInput, site Site) (Order
 		return Order{}, err
 	}
 	return o, nil
+}
+
+// An unpaid order holds its stock until it expires, and anyone can place one,
+// so one source must not be able to hold all of it without paying (SHOP-01).
+// A client address (IPv4, or an IPv6 /64) and a buyer email may each have only
+// a few unpaid orders that have not expired yet. The address allows more than
+// the email because buyers behind one carrier NAT share an IPv4.
+const (
+	maxUnpaidPerAddress = 5
+	maxUnpaidPerEmail   = 3
+)
+
+const msgTooManyUnpaid = "未付款订单过多，请先完成支付或等待订单过期后再下单"
+
+// unpaidQuota checks the unpaid orders of this order's address and email inside
+// the checkout transaction. Each key is locked for the rest of the transaction
+// (in a fixed order, so two checkouts never wait on each other's second key),
+// so concurrent checkouts from one source cannot all pass the count.
+func unpaidQuota(ctx context.Context, tx pgx.Tx, source, email string, expireMin int) error {
+	if expireMin <= 0 {
+		expireMin = 5 // as ExpireDue
+	}
+	email = strings.ToLower(email)
+	keys := []string{"dufaka-unpaid-email:" + email}
+	if source != "" {
+		keys = append(keys, "dufaka-unpaid-source:"+source)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, k); err != nil {
+			return err
+		}
+	}
+	var bySource, byEmail int
+	if err := tx.QueryRow(ctx, `
+		SELECT count(*) FILTER (WHERE buy_source = $1), count(*) FILTER (WHERE lower(email) = $2)
+		FROM orders
+		WHERE status = 1 AND deleted_at IS NULL AND created_at > now() - ($3 * interval '1 minute')
+		  AND (buy_source = $1 OR lower(email) = $2)`, source, email, expireMin).Scan(&bySource, &byEmail); err != nil {
+		return err
+	}
+	if (source != "" && bySource >= maxUnpaidPerAddress) || byEmail >= maxUnpaidPerEmail {
+		return RuleError{Msg: msgTooManyUnpaid}
+	}
+	return nil
 }
 
 func newSN() string {
