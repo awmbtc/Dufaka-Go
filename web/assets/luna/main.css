@@ -368,7 +368,7 @@ input[type="number"] {
     vertical-align: bottom;
 }
 
-.main .goods .msg .goods-price div {
+.main .goods .msg .goods-offers div {
     display: inline-block;
     background: #ffebe8;
     color: #fb636b;
@@ -925,8 +925,94 @@ input[type="number"] {
         margin-left: 20px;
     }
 
-    .main .goods .goods-price div {
-        margin-bottom: 5px;
+    /* Cards fill the same inset as the mobile filter controls. */
+    .main .goods {
+        margin-left: 12px;
+        margin-right: 12px;
+    }
+
+    .main .goods-list {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .main .goods .goods-box {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+        padding: 14px;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .main .goods .picture {
+        flex: 0 0 72px;
+        min-width: 0;
+        width: 72px;
+        height: 72px;
+        margin: 0;
+    }
+
+    .main .goods .msg {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .main .goods .msg .goods-name {
+        margin: 0 0 10px;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+
+    .main .goods .goods-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px 10px;
+    }
+
+    .main .goods .msg .goods-price {
+        font-size: 20px;
+        line-height: 1.25;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .main .goods .msg .goods-num {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .main .goods .msg .goods-num div {
+        width: 24px;
+        flex: none;
+    }
+
+    .main .goods .msg .goods-num span {
+        margin: 0;
+        color: #188153;
+    }
+
+    .main .goods .msg .goods-sold-out span {
+        color: #64748b;
+    }
+
+    .main .goods .goods-offers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 8px;
+    }
+
+    .main .goods .msg .goods-offers div {
+        margin: 0;
     }
 
     .main .cate {
