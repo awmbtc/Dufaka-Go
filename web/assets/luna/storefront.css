@@ -73,7 +73,7 @@ button.pay-type.pay-select {
 }
 
 .pay-cldx-wordmark { font-family: "Space Grotesk", "Avenir Next", sans-serif; font-size: 28px; font-weight: 500; letter-spacing: -1px; }
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
     .pay { grid-template-columns: repeat(auto-fit, 100px); gap: 10px; }
     .pay .pay-type { height: 40px; min-height: 40px; padding: 5px; border-radius: 6px; }
     .pay .pay-wechat-logo { width: 75.5px; height: 17px; }
