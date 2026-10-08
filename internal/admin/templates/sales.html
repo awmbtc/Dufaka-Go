@@ -183,9 +183,9 @@
 </div>
 </div>
 <div class="field"><label for="merchant_id">商户 ID</label><input id="merchant_id" name="merchant_id" value="{{.Form.MerchantID}}" maxlength="200">
-<p class="help">cldx 渠道通过环境变量配置，商户 ID 与商户密钥可留空；其他渠道必填。</p></div>
+<p class="help">cldx、usdt 渠道通过环境变量配置，商户 ID 与商户密钥可留空；其他渠道必填。</p></div>
 <div class="field"><label for="merchant_key">商户 KEY</label><textarea id="merchant_key" name="merchant_key"></textarea>
-<p class="help">wescan 渠道：微信支付 APIv3 密钥（32 位），填写后优先于环境变量 WECHAT_PAY_API_V3_KEY；cldx 渠道留空</p>
+<p class="help">wescan 渠道：微信支付 APIv3 密钥（32 位），填写后优先于环境变量 WECHAT_PAY_API_V3_KEY；cldx、usdt 渠道留空</p>
 {{if .Form.ID}}<p class="help">当前{{filled .Form.HasKey}}，留空表示不修改</p>
 <label><input type="checkbox" name="clear_merchant_key" value="1"> 清空商户 KEY</label>{{end}}</div>
 <div class="field"><label for="merchant_pem">商户密钥</label><textarea id="merchant_pem" name="merchant_pem"></textarea>
@@ -196,14 +196,14 @@
 <option value="1" {{if eq .Form.Open 1}}selected{{end}}>启用</option>
 <option value="0" {{if eq .Form.Open 0}}selected{{end}}>禁用</option>
 </select>
-<p class="help">只有已接通收银台的渠道（wescan、cldx）可以启用；其他标识只能保存为禁用。</p>
+<p class="help">只有已接通收银台的渠道（wescan、cldx、usdt）可以启用；其他标识只能保存为禁用。</p>
 </div>
 <button class="primary" type="submit">提交</button>
 {{if .Form.ID}}<a href="/admin/pays">取消</a>{{end}}
 </form>
 <div class="card" id="pay-config-status">
 <h2>配置状态</h2>
-<p class="help">只读：已接通渠道当前能否收款。wescan 合并后台字段与 WECHAT_PAY_* 环境变量；cldx 只看 WALLET_MERCHANT_SECRET。</p>
+<p class="help">只读：已接通渠道当前能否收款。wescan 合并后台字段与 WECHAT_PAY_* 环境变量；cldx 只看 WALLET_MERCHANT_SECRET；usdt 查看 USDT_PAY_SERVICE_URL、USDT_PAY_API_SECRET、USDT_TRC20_ADDRESS。</p>
 <ul>
 {{range .Status}}<li><strong>{{.Name}}</strong>（{{.Check}}）：{{if .OK}}<span class="banner ok">{{.Text}}</span>{{else}}<span class="banner err">{{.Text}}</span>{{end}}</li>
 {{else}}<li>尚无已接通的支付通道</li>{{end}}

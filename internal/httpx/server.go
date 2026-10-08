@@ -41,6 +41,7 @@ type App struct {
 	tpl        *template.Template
 	base       string
 	configPath string
+	usdt       pay.USDT
 	wallet     pay.Wallet
 	receipts   *receiptThrottle
 	lookups    *ipLimiter // order lookups by number / email: 30 per 5 minutes per address
@@ -92,6 +93,7 @@ func New(db *store.DB, base, configPath string) (*App, error) {
 		lookups:  newIPLimiter("订单查询", lookupLimit, lookupOverflow, limitWindow),
 		polls:    newIPLimiter("订单状态轮询", pollLimit, 0, limitWindow),
 		orders:   newIPLimiter("下单", orderLimit, orderOverflow, limitWindow),
+		usdt:     pay.USDT{Base: os.Getenv("USDT_PAY_SERVICE_URL"), Secret: os.Getenv("USDT_PAY_API_SECRET"), Address: os.Getenv("USDT_TRC20_ADDRESS")},
 		wallet: pay.Wallet{
 			Base:       envOr("WALLET_BASE_URL", "https://cldx-wallet-zh432gkopa-de.a.run.app"),
 			MerchantID: merchant,
@@ -258,6 +260,10 @@ func (a *App) buy(w http.ResponseWriter, r *http.Request) {
 func (a *App) payReady(p store.Pay) bool {
 	var why string
 	switch p.Check {
+	case "usdt":
+		if !a.usdt.Enabled() {
+			why = "USDT 服务未配置"
+		}
 	case "cldx":
 		if !a.wallet.Enabled() {
 			why = "钱包未配置（WALLET_MERCHANT_SECRET 等）"
@@ -377,6 +383,7 @@ func (a *App) poll(w http.ResponseWriter, r *http.Request) {
 	}
 	if o.Status == 1 || o.Status == -1 {
 		o = a.syncCldxOrder(r, o)
+		o = a.syncUSDTOrder(r.Context(), o)
 	}
 	if o.Status == -1 {
 		_ = json.NewEncoder(w).Encode(map[string]any{"msg": "expired", "code": 400001})
@@ -517,6 +524,10 @@ func (a *App) gateway(w http.ResponseWriter, r *http.Request) {
 	}
 	if p.Open != 1 {
 		a.fail(w, r, "支付方式已停用")
+		return
+	}
+	if p.Check == "usdt" {
+		a.usdtPay(w, r, o)
 		return
 	}
 	if p.Check == "cldx" {

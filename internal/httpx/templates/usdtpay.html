@@ -1,0 +1,42 @@
+{{define "usdtpay.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>USDT 支付 | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css?v=mobile-cards-20261009"><link rel="stylesheet" href="/assets/luna/storefront.css?v=payment-brands-20261009"></head>
+<body><div class="background"></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="main-box usdt-cashier">
+<h3 class="pay-brand"><img class="pay-icon" src="/assets/payments/usdt.svg" alt="">USDT支付</h3>
+<p class="payment-order">订单号：{{.Order.SN}}</p>
+{{template "payclock" .}}
+<div data-pay-now>
+<p>请使用 <strong>TRON（TRC20）</strong> 网络转账</p>
+<p class="cldx-amount"><span id="usdt-amount">{{.Invoice.Amount}}</span> USDT</p>
+<p>订单金额 ¥{{yuan .Order.Actual}} · 请完整转入上方金额，保留全部小数位。</p>
+<button type="button" class="payment-copy" data-copy="usdt-amount">复制金额</button>
+<img class="payment-qr" alt="USDT TRC20 收款地址二维码" src="data:image/png;base64,{{.QR}}">
+<p>收款地址</p><p class="payment-address" id="usdt-address">{{.Invoice.Address}}</p>
+<button type="button" class="payment-copy" data-copy="usdt-address">复制地址</button>
+<p class="payment-hint">二维码仅包含地址，转账时请填写本单金额。链上确认后会自动更新，请勿重复付款。</p>
+</div>
+<p id="pay-state" role="status" aria-live="polite">等待付款</p>
+<a href="/detail-order-sn/{{.Order.SN}}">查看订单</a>
+</div></div></div></div>
+<script>
+(function () {
+  var sn = "{{.Order.SN}}", state = document.getElementById("pay-state");
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var value = document.getElementById(button.dataset.copy).textContent;
+      if (!navigator.clipboard) { state.textContent = "无法自动复制，请长按文字复制。"; return; }
+      navigator.clipboard.writeText(value).then(function () { state.textContent = "已复制"; }).catch(function () { state.textContent = "复制失败，请长按文字复制。"; });
+    });
+  });
+  function check() {
+    fetch("/check-order-status/" + encodeURIComponent(sn)).then(function (r) { if (!r.ok) throw new Error("network"); return r.json(); }).then(function (res) {
+      if (res.code === 200) { if (timer) clearInterval(timer); state.textContent = "支付成功，正在打开订单"; location.href = "/detail-order-sn/" + encodeURIComponent(sn); }
+      else if (res.code === 400001) { state.textContent = "订单已过期，请勿继续转账。已付款的订单仍会继续核验到账。"; document.querySelector("[data-pay-now]").hidden = true; }
+      else if (res.code === 400002) { clearInterval(timer); state.textContent = "订单处理异常，请查看订单或联系店主。"; }
+    }).catch(function () { state.textContent = "暂时无法查询支付状态，正在重试，请勿重复付款。"; });
+  }
+  var timer = setInterval(check, 10000);
+})();
+</script></body></html>{{end}}

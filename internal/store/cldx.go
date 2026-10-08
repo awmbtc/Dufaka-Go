@@ -28,6 +28,7 @@ const (
 // (repeated in install/schema.sql, sql/001_schema.sql and sql/003_cldx_poll.sql)
 // and the unpaid-order index behind the checkout quota (sql/005_unpaid_quota.sql).
 var cldxIndexes = []struct{ name, ddl string }{
+	{"idx_orders_usdt_poll", `CREATE INDEX IF NOT EXISTS idx_orders_usdt_poll ON orders (usdt_polled_at NULLS FIRST, id) WHERE status IN (1,-1) AND usdt_payment IS NOT NULL AND deleted_at IS NULL`},
 	{"idx_orders_cldx_live", `CREATE INDEX IF NOT EXISTS idx_orders_cldx_live ON orders (cldx_polled_at NULLS FIRST, id) WHERE status = 1 AND cldx_minor IS NOT NULL AND deleted_at IS NULL`},
 	{"idx_orders_cldx_late", `CREATE INDEX IF NOT EXISTS idx_orders_cldx_late ON orders (cldx_expires_at) WHERE status = -1 AND cldx_minor IS NOT NULL AND deleted_at IS NULL`},
 	{"idx_orders_unpaid", `CREATE INDEX IF NOT EXISTS idx_orders_unpaid ON orders (created_at) WHERE status = 1 AND deleted_at IS NULL`},
@@ -86,6 +87,8 @@ var schemaColumns = []struct{ name, ddl string }{
 	{"cldx_polled_at", "bigint"},
 	{"stock_owed", "boolean NOT NULL DEFAULT false"},
 	{"buy_source", "varchar(64)"},
+	{"usdt_payment", "jsonb"},
+	{"usdt_polled_at", "bigint"},
 }
 
 // schemaLockTimeout bounds how long one upkeep statement waits for its table lock, so a

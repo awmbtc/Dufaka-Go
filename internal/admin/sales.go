@@ -742,6 +742,14 @@ type payStatus struct {
 func payConfigStatus(row payRow) (payStatus, bool) {
 	st := payStatus{Name: row.Name, Check: row.Check}
 	switch row.Check {
+	case "usdt":
+		cfg := pay.USDT{Base: os.Getenv("USDT_PAY_SERVICE_URL"), Secret: os.Getenv("USDT_PAY_API_SECRET"), Address: os.Getenv("USDT_TRC20_ADDRESS")}
+		st.OK = cfg.Enabled()
+		if st.OK {
+			st.Text = "USDT TRC20 服务已配置"
+		} else {
+			st.Text = "未配置 USDT 服务地址、密钥或 TRC20 收款地址"
+		}
 	case "wescan":
 		cfg := pay.WechatConfig{MchID: row.MerchantID, PrivateKeyPEM: row.Pem, APIv3Key: row.Key}.WithEnv()
 		if problems := cfg.Validate(); len(problems) > 0 {
@@ -894,9 +902,8 @@ func readPayOver(r *http.Request, old payForm) (payForm, error) {
 	if f.Client != 1 && f.Client != 2 && f.Client != 3 {
 		return f, errors.New("支付场景请选择电脑、手机或通用")
 	}
-	// The cldx wallet channel is configured through environment variables, so
-	// its merchant fields may stay empty; every other channel needs them.
-	if f.Check != "cldx" {
+	// Wallet and USDT service credentials are supplied only through the environment.
+	if f.Check != "cldx" && f.Check != "usdt" {
 		if f.MerchantID == "" {
 			return f, errors.New("请填写商户 ID")
 		}

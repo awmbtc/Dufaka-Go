@@ -9,7 +9,7 @@ import "context"
 // storefront channel list (Pays), the checkout guard in CreateOrder and the
 // startup sweep DisableUnwiredPays: a channel missing here can neither be
 // offered to a customer nor accepted on an order.
-var CashierChecks = []string{"wescan", "cldx"}
+var CashierChecks = []string{"wescan", "cldx", "usdt"}
 
 // CashierReady reports whether a payment channel has a working cashier in this
 // build. Only these channels may be enabled or offered to customers.

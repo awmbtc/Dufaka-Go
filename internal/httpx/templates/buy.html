@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
 <link rel="stylesheet" href="/assets/luna/main.css?v=mobile-cards-20261009">
 <link rel="shortcut icon" href="/assets/brand/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/luna/storefront.css?v=mobile-cards-20261009"></head>
+<link rel="stylesheet" href="/assets/luna/storefront.css?v=payment-brands-20261009"></head>
 <body>
 <div class="background"></div>
 <div class="header"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="header-box">
@@ -46,11 +46,18 @@
 <div class="entry"><span class="l-msg">{{.Label}}：</span><label class="input"><input type="text" name="{{.Field}}" {{if .Required}}required{{end}}></label></div>
 {{end}}{{end}}
 {{if .Site.SearchPwd}}<div class="entry"><span class="l-msg">查询密码：</span><label class="input"><input type="text" name="search_pwd" required placeholder="请填写订单的查询密码"></label></div>{{end}}
-<div class="pay notSelection">
+<div class="pay notSelection" role="group" aria-label="支付方式">
 <input type="hidden" name="payway" value="{{if .Pays}}{{(index .Pays 0).ID}}{{else}}0{{end}}">
 {{range $i, $p := .Pays}}
-<button type="button" class="pay-type{{if eq $i 0}} pay-select{{end}}" data-id="{{$p.ID}}" data-type="{{$p.Check}}" data-name="{{$p.Name}}">{{$p.Name}}</button>
+<button type="button" class="pay-type{{if eq $i 0}} pay-select{{end}}" aria-pressed="{{if eq $i 0}}true{{else}}false{{end}}" data-id="{{$p.ID}}" data-type="{{$p.Check}}" data-name="{{$p.Name}}">
+{{if eq $p.Check "wescan"}}<img class="pay-wechat-logo" src="/assets/payments/wechat-pay.svg" alt="微信支付">
+{{else if eq $p.Check "cldx"}}<span class="pay-brand"><span class="pay-wallet-logo" aria-hidden="true"></span><span class="pay-cldx-wordmark">Cldx Pay</span></span>
+{{else if eq $p.Check "usdt"}}<span class="pay-brand"><img class="pay-icon" src="/assets/payments/usdt.svg" alt=""><span>USDT支付</span></span>
+{{else}}<span class="pay-brand">{{$p.Name}}</span>{{end}}
+<span class="pay-check" aria-hidden="true">✓</span>
+</button>
 {{end}}
+
 </div>
 </div></div>
 <div class="layui-col-sm12 buy"><button {{if or (le .Good.InStock 0) (not .Pays)}}disabled{{end}} type="submit"><span>立即下单</span></button></div>
@@ -82,10 +89,11 @@
   document.querySelectorAll(".sub").forEach(function (el) { el.addEventListener("click", function () { set((parseInt(num.value, 10) || 1) - 1); }); });
   document.querySelectorAll(".add").forEach(function (el) { el.addEventListener("click", function () { set((parseInt(num.value, 10) || 1) + 1); }); });
   num.addEventListener("change", function () { set(parseInt(num.value, 10) || 1); });
-  document.querySelectorAll(".pay-type").forEach(function (item) {
+  document.querySelectorAll(".pay-type:not(:disabled)").forEach(function (item) {
     item.addEventListener("click", function () {
-      document.querySelectorAll(".pay-type").forEach(function (other) { other.classList.remove("pay-select"); });
+      document.querySelectorAll(".pay-type").forEach(function (other) { other.classList.remove("pay-select"); other.setAttribute("aria-pressed", "false"); });
       item.classList.add("pay-select");
+      item.setAttribute("aria-pressed", "true");
       var input = document.querySelector("input[name=payway]");
       if (input) input.value = item.getAttribute("data-id");
     });
