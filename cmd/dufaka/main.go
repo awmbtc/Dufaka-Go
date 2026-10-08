@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -39,7 +40,11 @@ func runTick(current *store.DB, app *httpx.App) {
 	} else if err := current.ExpireDue(ctx, site.ExpireMin); err != nil {
 		log.Printf("过期订单清理失败: %v", err)
 	}
-	app.SyncCldx(ctx)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() { defer wg.Done(); app.SyncCldx(ctx) }()
+	go func() { defer wg.Done(); app.SyncUSDT(ctx) }()
+	wg.Wait()
 }
 
 // pingTimeout bounds the startup connectivity check so a wrong DSN is reported

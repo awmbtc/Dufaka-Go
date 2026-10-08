@@ -11,3 +11,5 @@
 - 收银页明确区分待付款、过期、到账、处理异常和网络失败；复制只有成功后才显示“已复制”。
 - 审核前先加载个人 ux-designer 技能；浏览器验证桌面 1440px、手机 390px，覆盖真实交互，不能只看模板能否编译。
 - 复用 `TestExportAuditPages` 可通过 `DUFAKA_AUDIT_OUTPUT` 导出测试页面。业务集成测试用 `DUFAKA_TEST_DATABASE_URL` 指向专用本地测试库；测试自动建立和清理独立 schema。
+
+- 支付方式：官方微信 SVG、原始钱包图标 + `Cldx Pay`（Space Grotesk Medium）、官方 Tether 图标 + USDT支付。图标与文字作为一个整体在卡片中心，不给文字单独设固定宽。电脑 ≥1024px 为 100×40px 的紧凑卡片；平板自适应等宽、76px 高；手机 ≤575px 单列 76px 高，保留触控尺寸。选中边框、右上勾选与 aria-pressed 同步。
