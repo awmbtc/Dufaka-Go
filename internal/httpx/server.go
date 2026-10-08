@@ -74,7 +74,7 @@ func New(db *store.DB, base, configPath string) (*App, error) {
 		},
 		"rich":          rich,
 		"maskSN":        maskSN,
-		"lunaGoods":     lunaGoods,
+		"goodsCount":    goodsCount,
 		"stockPercent":  stockPercent,
 		"wholesaleRows": wholesaleRows,
 		"extraInputs":   extraInputs,
@@ -222,14 +222,6 @@ func (a *App) viewStatus(w http.ResponseWriter, status int, name string, data an
 
 func (a *App) render(w io.Writer, name string, data any) error {
 	chosen := name
-	if m, ok := data.(map[string]any); ok {
-		if site, ok := m["Site"].(store.Site); ok && (site.Template == "luna" || site.Template == "hyper") {
-			alt := site.Template + "_" + name
-			if a.tpl.Lookup(alt) != nil {
-				chosen = alt
-			}
-		}
-	}
 	return a.tpl.ExecuteTemplate(w, chosen, data)
 }
 
@@ -786,7 +778,7 @@ func logSafe(s string) string {
 }
 
 func (a *App) failStatus(w http.ResponseWriter, r *http.Request, status int, msg string) {
-	site := store.Site{Title: "Dufaka-Go", TextLogo: "Dufaka-Go", Template: "unicorn"}
+	site := store.Site{Title: "Dufaka-Go", TextLogo: "Dufaka-Go"}
 	if db := a.live(); db != nil {
 		site = db.Site(r.Context())
 	}

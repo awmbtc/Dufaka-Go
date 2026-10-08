@@ -144,11 +144,6 @@ type settingField struct {
 	Disabled bool
 }
 
-const (
-	helpImgCode = "图形验证码尚未接通，此开关暂不可用"
-	helpGeetest = "极验尚未接通，此开关暂不可用；保存设置时会清零"
-)
-
 type settingTab struct {
 	Name   string
 	Fields []settingField
@@ -179,11 +174,6 @@ func settingTabs(m map[string]string) []settingTab {
 	sw := func(key, label string) settingField {
 		return settingField{Key: key, Label: label, Value: settingValue(m, key, "0"), Kind: "switch"}
 	}
-	off := func(key, label, help string) settingField {
-		f := sw(key, label)
-		f.Disabled, f.Help = true, help
-		return f
-	}
 	return []settingTab{
 		{Name: "基本设置", Fields: []settingField{
 			text("title", "网站标题", "", ""),
@@ -191,11 +181,7 @@ func settingTabs(m map[string]string) []settingTab {
 			text("text_logo", "文字LOGO", "", ""),
 			text("keywords", "网站关键词", "", ""),
 			area("description", "网站描述", ""),
-			{Key: "template", Label: "站点模板", Kind: "select", Value: settingValue(m, "template", "unicorn"), Options: []opt{
-				{Value: "unicorn", Label: "Unicorn"},
-				{Value: "luna", Label: "Luna"},
-				{Value: "hyper", Label: "Hyper"},
-			}},
+
 			{Key: "language", Label: "站点语言", Kind: "select", Value: settingValue(m, "language", "zh_CN"), Options: []opt{
 				{Value: "zh_CN", Label: "简体中文"},
 				{Value: "zh_TW", Label: "繁体中文"},
@@ -203,7 +189,6 @@ func settingTabs(m map[string]string) []settingTab {
 			text("manage_email", "管理员邮箱", "", ""),
 			text("order_expire_time", "订单过期时间(分钟)", "5", ""),
 			sw("is_open_anti_red", "是否开启微信/QQ防红"),
-			off("is_open_img_code", "是否开启图形验证码", helpImgCode),
 			sw("is_open_search_pwd", "是否开启查询密码"),
 			sw("is_open_google_translate", "是否开启google翻译"),
 			area("notice", "站点公告", ""),
@@ -231,11 +216,6 @@ func settingTabs(m map[string]string) []settingTab {
 			text("encryption", "协议", "", ""),
 			text("from_address", "发件地址", "", ""),
 			text("from_name", "发件名称", "", ""),
-		}},
-		{Name: "极验验证", Fields: []settingField{
-			text("geetest_id", "极验id", "", ""),
-			text("geetest_key", "极验key", "", ""),
-			off("is_open_geetest", "是否开启极验", helpGeetest),
 		}},
 	}
 }
@@ -281,19 +261,8 @@ func applySettings(old map[string]string, r *http.Request) (map[string]string, e
 			out[f.Key] = val
 		}
 	}
-	// Disabled switches are not submitted by the browser and neither captcha
-	// is wired up. A stored is_open_geetest=1 would reject every order while
-	// the disabled control gives the owner no way to clear it, so both
-	// switches are forced off on every save.
-	out["is_open_img_code"] = "0"
-	out["is_open_geetest"] = "0"
 	if strings.TrimSpace(out["title"]) == "" {
 		return out, errors.New("请填写网站标题")
-	}
-	switch out["template"] {
-	case "unicorn", "luna", "hyper":
-	default:
-		return out, errors.New("请选择站点模板")
 	}
 	switch out["language"] {
 	case "zh_CN", "zh_TW":

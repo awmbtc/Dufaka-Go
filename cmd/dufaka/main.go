@@ -81,14 +81,13 @@ func bootStep(fn func(ctx context.Context)) {
 // the site is installed. With no reachable database every step is skipped
 // (and said so in the log); the request guards take over once it is back.
 // Steps: cldx columns and poll indexes (always), the cldx pays row (only with
-// a wallet secret), switching off channels without a cashier, and clearing the
-// captcha switches this build does not wire.
+// a wallet secret), and switching off channels without a cashier.
 func bootChecks(db *store.DB, reachable, walletSecret bool) (installed bool) {
 	if db == nil {
 		return false
 	}
 	if !reachable {
-		log.Printf("数据库不可达，跳过启动检查（安装状态、cldx 表结构与渠道、支付渠道停用、验证码开关）")
+		log.Printf("数据库不可达，跳过启动检查（安装状态、cldx 表结构与渠道、支付渠道停用）")
 		return false
 	}
 	bootStep(func(ctx context.Context) { installed = db.Installed(ctx) })
@@ -108,21 +107,7 @@ func bootChecks(db *store.DB, reachable, walletSecret bool) (installed bool) {
 		})
 	}
 	bootStep(func(ctx context.Context) { disableUnwiredPays(ctx, db) })
-	bootStep(func(ctx context.Context) { disableCaptchaSwitches(ctx, db) })
 	return true
-}
-
-// disableCaptchaSwitches clears the image-captcha and GeeTest switches, which
-// this build does not wire, and logs how many settings rows changed.
-func disableCaptchaSwitches(ctx context.Context, db *store.DB) {
-	n, err := db.DisableCaptchaSwitches(ctx)
-	if err != nil {
-		log.Printf("关闭图形验证码与极验开关失败: %v", err)
-		return
-	}
-	if n > 0 {
-		log.Printf("已关闭 %d 个未接通的验证码开关（图形验证码、极验）", n)
-	}
 }
 
 // disableUnwiredPays switches off every enabled payment channel that has no

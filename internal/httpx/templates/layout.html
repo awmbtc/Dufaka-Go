@@ -6,24 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} | {{.Site.Title}}</title>
+    {{if .Site.Keywords}}<meta name="keywords" content="{{.Site.Keywords}}">{{end}}
+    {{if .Site.Description}}<meta name="description" content="{{.Site.Description}}">{{end}}
     <link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
     <style>.navbar-brand .site-mark{margin-right:10px}</style>
-    <meta name="Keywords" content="{{.Site.Keywords}}">
-    <meta name="Description" content="{{.Site.Description}}">
-    {{if eq .Site.Template "hyper"}}
-    <link href="/assets/hyper/css/icons.min.css" rel="stylesheet" type="text/css">
-    <link href="/assets/hyper/css/app-creative.min.css" rel="stylesheet" type="text/css">
-    <link href="/assets/hyper/css/hyper.css" rel="stylesheet" type="text/css">
-    {{else if eq .Site.Template "luna"}}
     <link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
-    <link rel="stylesheet" href="/assets/luna/main.css">
-    {{else}}
-    <link rel="stylesheet" href="/assets/unicorn/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/unicorn/css/base.css">
-    <link rel="stylesheet" href="/assets/unicorn/css/common.css">
-    <link rel="stylesheet" href="/assets/unicorn/css/index.css">
-    {{end}}
-<link rel="stylesheet" href="/assets/style/storefront.css"></head>
+    <link rel="stylesheet" href="/assets/luna/main.css?v=mobile-header-20261009">
+    <link rel="stylesheet" href="/assets/luna/storefront.css"></head>
 <body>
 <header class="header sticky-top">
     <div class="container">
@@ -66,11 +55,7 @@
         </div>
     </div>
 </footer>
-<script src="/assets/unicorn/js/jquery-3.6.0.min.js"></script>
-<script src="/assets/unicorn/js/bootstrap.min.js"></script>
-{{if eq .Site.Template "luna"}}
 <script src="/assets/luna/layui/layui.js"></script>
-{{end}}
 </body>
 </html>
 {{end}}

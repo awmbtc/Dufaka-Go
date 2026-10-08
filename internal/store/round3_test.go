@@ -430,45 +430,6 @@ func TestWaitingSNsBucketsIntegration(t *testing.T) {
 	}
 }
 
-// B3-7: the store no longer refuses checkouts because of the GeeTest switch.
-func TestCheckoutIgnoresGeeTestIntegration(t *testing.T) {
-	pool := testdb.Open(t)
-	db := &DB{Pool: pool}
-	seedShop(t, pool)
-	mustExec(t, pool, `INSERT INTO carmis(goods_id,carmi) VALUES(1,'C1')`)
-	if _, err := db.CreateOrder(context.Background(), CreateInput{GID: 1, PayID: 1, Amount: 1, Email: "g@example.com"}, Site{GeeTest: true}); err != nil {
-		t.Fatalf("checkout refused with geetest on: %v", err)
-	}
-}
-
-// B3-7: the startup sweep clears both captcha switches and the Site cache.
-func TestDisableCaptchaSwitchesIntegration(t *testing.T) {
-	pool := testdb.Open(t)
-	db := &DB{Pool: pool}
-	ctx := context.Background()
-	mustExec(t, pool, `INSERT INTO settings(key,value) VALUES('is_open_geetest','1'),('is_open_img_code','1'),('title','T'),('is_open_search_pwd','1')`)
-	if !db.Site(ctx).GeeTest {
-		t.Fatal("setup: geetest not read")
-	}
-	n, err := db.DisableCaptchaSwitches(ctx)
-	if err != nil || n != 2 {
-		t.Fatalf("changed %d rows (%v), want 2", n, err)
-	}
-	if s := db.Site(ctx); s.GeeTest || !s.SearchPwd || s.Title != "T" {
-		t.Fatalf("cache not dropped or wrong rows touched: %+v", s)
-	}
-	var vals string
-	if err := pool.QueryRow(ctx, `SELECT string_agg(key||'='||value, ',' ORDER BY key) FROM settings`).Scan(&vals); err != nil {
-		t.Fatal(err)
-	}
-	if vals != "is_open_geetest=0,is_open_img_code=0,is_open_search_pwd=1,title=T" {
-		t.Fatalf("settings: %s", vals)
-	}
-	if n, err = db.DisableCaptchaSwitches(ctx); err != nil || n != 0 {
-		t.Fatalf("second sweep: %d %v", n, err)
-	}
-}
-
 // B3-8: expiry releases only the order's own goods' reservations.
 func TestExpireReleaseScopedToGoodsIntegration(t *testing.T) {
 	pool := testdb.Open(t)

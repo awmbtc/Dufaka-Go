@@ -1,8 +1,8 @@
 /* macOS System Settings layout. Colors live only in these tokens. */
 :root {
   color-scheme: light;
-  --bg: #f2f2f7;
-  --sidebar: rgba(246, 246, 248, 0.92);
+  --bg: #f4f7fb;
+  --sidebar: rgba(255, 255, 255, 0.94);
   --card: #ffffff;
   --card-2: #f7f7f8;
   --text: #1d1d1f;
@@ -10,7 +10,7 @@
   --faint: #8e8e93;
   --line: rgba(0, 0, 0, 0.08);
   --field: #f2f2f7;
-  --accent: #007aff;
+  --accent: #2aabee;
   --accent-fg: #ffffff;
   --danger: #ff3b30;
   --ok-bg: #e7f8ee;
@@ -18,9 +18,9 @@
   --err-bg: #fdecea;
   --err-fg: #9b1c1c;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-  --sidebar-w: 260px;
-  --radius: 12px;
-  --radius-sm: 8px;
+  --sidebar-w: 272px;
+  --radius: 14px;
+  --radius-sm: 10px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -28,21 +28,21 @@
   --space-5: 24px;
   --space-6: 32px;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
-  --row: 44px;
+  --row: 46px;
 }
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #1c1c1e;
-  --sidebar: rgba(36, 36, 38, 0.94);
-  --card: #2c2c2e;
-  --card-2: #3a3a3c;
-  --text: #f5f5f7;
-  --muted: #aeaeb2;
-  --faint: #8e8e93;
+  --bg: #17212b;
+  --sidebar: rgba(32, 46, 58, 0.96);
+  --card: #202b36;
+  --card-2: #263747;
+  --text: #f2f6f9;
+  --muted: #a8bac8;
+  --faint: #8095a6;
   --line: rgba(255, 255, 255, 0.1);
-  --field: #1c1c1e;
-  --accent: #0a84ff;
+  --field: #17212b;
+  --accent: #2aabee;
   --accent-fg: #ffffff;
   --danger: #ff453a;
   --ok-bg: #123322;
@@ -57,7 +57,7 @@ html, body { margin: 0; min-height: 100%; }
 body {
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.45 var(--font);
+  font: 15px/1.45 var(--font);
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--accent); }
@@ -121,7 +121,7 @@ a { color: var(--accent); }
   font-size: 14px;
 }
 .nav-link:hover { background: var(--card-2); }
-.nav-link.active { background: var(--accent); color: var(--accent-fg); }
+.nav-link.active { background: var(--accent); color: var(--accent-fg); box-shadow: 0 4px 10px rgba(42,171,238,.22); }
 .nav-link.active .ico { background: rgba(255, 255, 255, 0.2); color: var(--accent-fg); }
 .ico {
   width: 22px;
@@ -190,6 +190,7 @@ button.nav-link {
   padding: var(--space-6) var(--space-5) 64px;
 }
 .pane-inner { max-width: 880px; margin: 0 auto; }
+.pane-inner { max-width: 1040px; }
 .menu-btn {
   display: none;
   border: 1px solid var(--line);
@@ -205,11 +206,11 @@ button.nav-link {
   top: 8px;
   z-index: 5;
 }
-.hero { text-align: center; margin-bottom: var(--space-5); }
+.hero { text-align: left; margin-bottom: var(--space-5); padding: 4px 2px 2px; }
 .hero-icon {
   width: 64px;
   height: 64px;
-  margin: 0 auto var(--space-3);
+  margin: 0 0 var(--space-3);
   border-radius: 16px;
   display: grid;
   place-items: center;
@@ -219,7 +220,7 @@ button.nav-link {
 }
 .hero-icon svg { width: 32px; height: 32px; }
 .hero h1 { margin: 0 0 var(--space-2); font-size: 28px; line-height: 1.2; font-weight: 700; }
-.hero p { margin: 0 auto; max-width: 520px; color: var(--muted); font-size: 14px; }
+.hero p { margin: 0; max-width: 620px; color: var(--muted); font-size: 14px; }
 .pane-inner > h1 { display: none; }
 
 .banner { padding: var(--space-3) var(--space-4); border-radius: var(--radius); margin: 0 0 var(--space-4); }
@@ -319,9 +320,11 @@ form > .primary { margin-bottom: var(--space-4); }
 .filters label { display: grid; gap: var(--space-1); font-size: 12px; color: var(--muted); }
 .filters button { justify-self: start; }
 
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); }
 table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; word-break: keep-all; writing-mode: horizontal-tb; }
+tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: var(--card-2); }
 td.wrap { white-space: normal; min-width: 140px; }
 th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; }

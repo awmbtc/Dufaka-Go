@@ -1,113 +1,246 @@
-{{define "home.html"}}{{template "head" .}}
-<div class="notice">
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <div class="jumbotron jumbotron-fluid p-1">
-                            <div class="container">
-                                <h4>站点公告：</h4>
-                                <p class="lead">{{rich .Site.Notice}}</p>
-                            </div>
+{{define "home.html"}}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+<title>首页 | {{.Site.Title}}</title>
+{{if .Site.Keywords}}<meta name="keywords" content="{{.Site.Keywords}}">{{end}}
+{{if .Site.Description}}<meta name="description" content="{{.Site.Description}}">{{end}}
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css">
+<link rel="stylesheet" href="/assets/luna/main.css?v=mobile-header-20261009">
+<link rel="shortcut icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/luna/storefront.css"></head>
+<body>
+<div class="background"></div>
+<div class="header">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+            <div class="header-box">
+                <a href="/">
+                    {{template "mark" .}}
+                    <div class="info">{{.Site.TextLogo}}</div>
+                </a>
+                <div class="query layui-hide-xs">
+                    <a href="/order-search">
+                        <svg t="1602923269232" class="icon" viewBox="0 0 1024 1024" width="20" height="20" aria-hidden="true"><path d="M965.6 447.2 752 447.2c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l213.6 0c14.4 0 26.4 12 26.4 26.4C992.8 435.2 980.8 447.2 965.6 447.2zM965.6 233.6 699.2 233.6c-14.4 0-26.4-12-26.4-26.4 0-14.4 12-26.4 26.4-26.4l267.2 0c14.4 0 26.4 12 26.4 26.4C992.8 221.6 980.8 233.6 965.6 233.6zM606.4 623.2l156.8 156.8c21.6 21.6 21.6 56.8 0 78.4-21.6 21.6-56.8 21.6-78.4 0L528 701.6c-16-16-20-39.2-12-59.2-51.2 44-117.6 72-190.4 72-162.4 0-293.6-131.2-293.6-293.6s131.2-293.6 293.6-293.6 293.6 131.2 293.6 293.6c0 72.8-28 139.2-72 190.4C567.2 603.2 590.4 607.2 606.4 623.2zM324.8 233.6c-103.2 0-187.2 84-187.2 187.2s84 187.2 187.2 187.2S512 523.2 512 420 428 233.6 324.8 233.6zM805.6 607.2l160 0c14.4 0 26.4 12 26.4 26.4 0 14.4-12 26.4-26.4 26.4l-160 0c-14.4 0-26.4-12-26.4-26.4C779.2 619.2 791.2 607.2 805.6 607.2z" fill="#ffffff"></path></svg>
+                        <span>订单查询</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{if .Site.Notice}}<div class="main layui-hide-xs">
+    <div class="layui-row"><div class="layui-col-sm12"><div class="main-box">
+        <div class="title"><p class="tit">站点公告:</p></div>
+        <div class="goods"><div class="tips">{{rich .Site.Notice}}</div></div>
+    </div></div></div>
+</div>
+<div class="main layui-hide-sm layui-show-xs">
+    <div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12"><div class="main-box">
+        <div class="title"><p class="tit">站点公告:</p></div>
+        <div class="goods"><div class="tips">{{rich .Site.Notice}}</div></div>
+    </div></div></div>
+</div>
+{{end}}
+<div class="main">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+            <div class="main-box">
+                <div class="mobile-controls" aria-label="商品筛选">
+                    <div class="mobile-category">
+                        <button class="mobile-category-toggle" id="mobile-category-toggle" type="button" aria-expanded="false" aria-controls="mobile-category-menu">
+                            <span class="mobile-category-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+                            <span class="mobile-category-current">全部</span>
+                            <span class="mobile-category-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="mobile-category-menu" id="mobile-category-menu" role="menu" hidden>
+                            <button class="mobile-category-option mobile-category-option-select" type="button" role="menuitemradio" data-key="all" data-name="全部" aria-checked="true">
+                                <span>全部</span><span class="mobile-category-count">{{goodsCount .Groups}}</span>
+                            </button>
+                            {{range $i, $g := .Groups}}
+                            <button class="mobile-category-option" type="button" role="menuitemradio" data-key="{{$i}}" data-name="{{$g.Name}}" aria-checked="false">
+                                <span>{{$g.Name}}</span><span class="mobile-category-count">{{len $g.Goods}}</span>
+                            </button>
+                            {{end}}
                         </div>
+                    </div>
+                    <button class="mobile-sort-button" type="button" data-sort="name" aria-pressed="false">按名称排列</button>
+                    <button class="mobile-sort-button" type="button" data-sort="price" aria-pressed="false">按价格排列</button>
+                </div>
+                <div class="cate" role="tablist" aria-label="商品分类">
+                    <button class="cate-box cate-box-select" id="category-tab-all" type="button" role="tab" data-key="all" aria-selected="true" tabindex="0" aria-controls="goods-panel">
+                        <span class="cate-name">全部</span>
+                        <span class="cate-count">{{goodsCount .Groups}} 个商品</span>
+                    </button>
+                    {{range $i, $g := .Groups}}
+                    <button class="cate-box" id="category-tab-{{$i}}" type="button" role="tab" data-key="{{$i}}" aria-selected="false" tabindex="-1" aria-controls="goods-panel">
+                        <span class="cate-name">{{$g.Name}}</span>
+                        <span class="cate-count">{{len $g.Goods}} 个商品</span>
+                    </button>
+                    {{end}}
+                </div>
+                <div class="goods">
+                    <div class="goods-list" id="goods-panel" role="tabpanel" aria-live="polite" aria-labelledby="category-tab-all">
+                        {{range $i, $g := .Groups}}
+                        {{range $g.Goods}}
+                        <a class="goods-box" data-key="{{$i}}" data-name="{{.Name}}" data-price="{{.Actual}}" href="{{if gt .InStock 0}}/buy/{{.ID}}{{else}}javascript:void(0){{end}}"{{if le .InStock 0}} style="cursor:not-allowed;"{{end}}>
+                            <div class="picture"><img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" alt=""></div>
+                            <div class="msg">
+                                <div class="goods-name">{{.Name}}</div>
+                                <div class="goods-price">￥{{yuan .Actual}}{{range wholesaleRows .Wholesale}}<div>满{{index . 0}}个 单价{{index . 1}}元/件</div>{{end}}</div>
+                                <div class="goods-num">
+                                    <div><p style="width: {{stockPercent .InStock .Sales}}%;"></p></div>
+                                    <span>剩余{{.InStock}}件</span>
+                                </div>
+                            </div>
+                        </a>
+                        {{end}}
+                        {{end}}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<section class="main-container">
-    <div class="category">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-12">
-                    <h3 class="text-center"><span>今天需要一点什么？</span></h3>
-                    <div class="separator"></div>
-                    <p class="lead text-center"><span>请按商品说明购买，购买后可查询订单和发货状态。</span></p>
-                </div>
-                <div class="col-md-12">
-                    <div class="category-menus">
-                        <ul class="nav nav-pills justify-content-center">
-                            <li class="nav-item"><a href="#group-all" data-bs-toggle="tab" class="btn btn-outline-secondary active">全部</a></li>
-                            {{range .Groups}}
-                            <li class="nav-item"><a href="#group-{{.ID}}" data-bs-toggle="tab" class="btn btn-outline-secondary">{{.Name}}</a></li>
-                            {{end}}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="goods">
-        <div class="container">
-            <div class="goods-list mb-5">
-                <div id="goodsTabContent" class="tab-content">
-                    <div class="tab-pane fade active show" id="group-all">
-                        <div class="row row-cols-2 row-cols-md-5 g-4">
-                            {{range .Groups}}{{range .Goods}}
-                            <div class="col">
-                                <div class="card position-relative">
-                                    {{if eq .Type 1}}
-                                    <span class="badge bg-success position-absolute top-0 start-0"><i class="ali-icon">&#xe7db;</i> 自动发货</span>
-                                    {{else}}
-                                    <span class="badge bg-warning position-absolute top-0 start-0"><i class="ali-icon">&#xe74b;</i> 人工处理</span>
-                                    {{end}}
-                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" class="card-img-top" alt="{{.Name}}">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-truncate">{{.Name}}</h6>
-                                        <button type="button" class="btn btn-sm btn-outline-success"><i class="ali-icon">&#xe703;</i> <strong>{{yuan .Actual}}</strong></button>
-                                        <h6 class="mt-2"><small class="text-muted">库存：{{.InStock}}</small></h6>
-                                        <a href="/buy/{{.ID}}" class="btn btn-primary fr"><i class="ali-icon">&#xe7d8;</i> 立即下单</a>
-                                    </div>
-                                </div>
-                            </div>
-                            {{end}}{{end}}
-                        </div>
-                    </div>
-                    {{range .Groups}}
-                    <div class="tab-pane fade" id="group-{{.ID}}">
-                        <div class="row row-cols-2 row-cols-md-5 g-4">
-                            {{range .Goods}}
-                            <div class="col">
-                                <div class="card position-relative">
-                                    <img src="{{if .Picture}}{{.Picture}}{{else}}/assets/brand/logo.svg{{end}}" class="card-img-top" alt="{{.Name}}">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-truncate">{{.Name}}</h6>
-                                        <button type="button" class="btn btn-sm btn-outline-success"><strong>{{yuan .Actual}}</strong></button>
-                                        <h6 class="mt-2"><small class="text-muted">库存：{{.InStock}}</small></h6>
-                                        <a href="/buy/{{.ID}}" class="btn btn-primary fr">立即下单</a>
-                                    </div>
-                                </div>
-                            </div>
-                            {{end}}
-                        </div>
-                    </div>
-                    {{end}}
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<div class="footer">
+    <div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2 layui-col-sm12">
+        <div style="text-align:center">{{rich .Site.Footer}}</div>
+        <p>{{template "powered"}}</p>
+    </div></div>
+</div>
+<div class="query-m"><a href="/order-search"><svg viewBox="0 0 1024 1024" width="30" height="30" aria-hidden="true"><path d="M320.512 428.032h382.976v61.44H320.512zM320.512 616.448h320.512v61.44H320.512z" fill="#ffffff"></path><path d="M802.816 937.984H221.184l-40.96-40.96V126.976l40.96-40.96h346.112l26.624 10.24 137.216 117.76 98.304 79.872 15.36 31.744v571.392l-41.984 40.96z m-540.672-81.92h500.736V345.088L677.888 276.48 550.912 167.936H262.144v688.128z" fill="#ffffff"></path></svg><span>查单</span></a></div>
 <script>
-document.querySelectorAll(".category-menus a[data-bs-toggle='tab']").forEach(function (link) {
-  link.addEventListener("click", function (event) {
-    event.preventDefault();
-    var pane = document.querySelector(link.getAttribute("href"));
-    if (!pane) return;
-    document.querySelectorAll("#goodsTabContent .tab-pane").forEach(function (item) {
-      item.classList.remove("active", "show");
-    });
-    pane.classList.add("active", "show");
-    document.querySelectorAll(".category-menus a").forEach(function (item) {
-      item.classList.remove("active");
-    });
-    link.classList.add("active");
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".cate-box"));
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".goods-box"));
+  var panel = document.getElementById("goods-panel");
+  var mobileToggle = document.getElementById("mobile-category-toggle");
+  var mobileMenu = document.getElementById("mobile-category-menu");
+  var mobileCurrent = document.querySelector(".mobile-category-current");
+  var mobileOptions = Array.prototype.slice.call(document.querySelectorAll(".mobile-category-option"));
+  var sortButtons = Array.prototype.slice.call(document.querySelectorAll(".mobile-sort-button"));
+
+  function compareCategoryNames(a, b) {
+    var aName = a.getAttribute("data-name");
+    var bName = b.getAttribute("data-name");
+    var aLatin = /^[A-Za-z0-9]/.test(aName);
+    var bLatin = /^[A-Za-z0-9]/.test(bName);
+    if (aLatin !== bLatin) return aLatin ? -1 : 1;
+    return aName.localeCompare(bName, aLatin ? "en" : "zh-CN", {numeric: true, sensitivity: "base"});
+  }
+
+  mobileOptions.sort(function (a, b) {
+    if (a.getAttribute("data-key") === "all") return -1;
+    if (b.getAttribute("data-key") === "all") return 1;
+    return compareCategoryNames(a, b);
   });
-});
+  if (mobileMenu) mobileOptions.forEach(function (option) { mobileMenu.appendChild(option); });
+
+  function closeMobileMenu() {
+    if (!mobileMenu || !mobileToggle) return;
+    mobileMenu.hidden = true;
+    mobileToggle.setAttribute("aria-expanded", "false");
+  }
+
+  function updateMobileSelection(tab) {
+    var key = tab.getAttribute("data-key");
+    var name = key === "all" ? "全部" : tab.querySelector(".cate-name").textContent;
+    if (mobileCurrent) mobileCurrent.textContent = name;
+    mobileOptions.forEach(function (option) {
+      var selected = option.getAttribute("data-key") === key;
+      option.classList.toggle("mobile-category-option-select", selected);
+      option.setAttribute("aria-checked", selected ? "true" : "false");
+    });
+  }
+
+  function select(tab, moveFocus) {
+    var key = tab.getAttribute("data-key");
+    tabs.forEach(function (item) {
+      var selected = item === tab;
+      item.classList.toggle("cate-box-select", selected);
+      item.setAttribute("aria-selected", selected ? "true" : "false");
+      item.tabIndex = selected ? 0 : -1;
+    });
+    cards.forEach(function (card) {
+      card.hidden = key !== "all" && card.getAttribute("data-key") !== key;
+    });
+    if (panel) panel.setAttribute("aria-labelledby", tab.id);
+    updateMobileSelection(tab);
+    if (moveFocus) tab.focus();
+  }
+
+  tabs.forEach(function (tab, index) {
+    tab.addEventListener("click", function () { select(tab, false); });
+    tab.addEventListener("keydown", function (event) {
+      var next = index;
+      if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+      if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+      if (event.key === "Home") next = 0;
+      if (event.key === "End") next = tabs.length - 1;
+      if (next !== index) {
+        event.preventDefault();
+        select(tabs[next], true);
+      } else if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        select(tab, false);
+      }
+    });
+  });
+
+  if (mobileToggle && mobileMenu) {
+    mobileToggle.addEventListener("click", function () {
+      var open = mobileMenu.hidden;
+      mobileMenu.hidden = !open;
+      mobileToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) mobileOptions[0].focus();
+    });
+    mobileOptions.forEach(function (option) {
+      option.addEventListener("click", function () {
+        var tab = tabs.filter(function (item) { return item.getAttribute("data-key") === option.getAttribute("data-key"); })[0];
+        if (tab) select(tab, false);
+        closeMobileMenu();
+        mobileToggle.focus();
+      });
+      option.addEventListener("keydown", function (event) {
+        var index = mobileOptions.indexOf(option);
+        var next = index;
+        if (event.key === "ArrowDown") next = (index + 1) % mobileOptions.length;
+        if (event.key === "ArrowUp") next = (index - 1 + mobileOptions.length) % mobileOptions.length;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeMobileMenu();
+          mobileToggle.focus();
+          return;
+        }
+        if (next !== index) {
+          event.preventDefault();
+          mobileOptions[next].focus();
+        }
+      });
+    });
+    document.addEventListener("click", function (event) {
+      if (!event.target.closest(".mobile-category")) closeMobileMenu();
+    });
+  }
+
+  sortButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      var mode = button.getAttribute("data-sort");
+      cards.sort(function (a, b) {
+        if (mode === "price") {
+          return parseFloat(a.getAttribute("data-price")) - parseFloat(b.getAttribute("data-price"));
+        }
+        return a.getAttribute("data-name").localeCompare(b.getAttribute("data-name"), "zh-CN", {numeric: true, sensitivity: "base"});
+      });
+      cards.forEach(function (card) { panel.appendChild(card); });
+      sortButtons.forEach(function (item) {
+        var selected = item === button;
+        item.classList.toggle("mobile-sort-button-select", selected);
+        item.setAttribute("aria-pressed", selected ? "true" : "false");
+      });
+    });
+  });
+})();
 </script>
-<style>
-.form-check-input { width: 20px; height: 20px; }
-.form-check-label { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
-</style>
-{{template "foot" .}}{{end}}
+</body></html>{{end}}

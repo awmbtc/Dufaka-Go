@@ -1,21 +1,14 @@
-{{define "cldxpay.html"}}{{template "head" .}}
-<section class="main-container">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card mt-3">
-                    <div class="card-body text-center">
-                        {{template "cldx-content" .}}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+{{define "cldxpay.html"}}<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cldx 支付 | {{.Site.Title}}</title>
+<link rel="stylesheet" href="/assets/luna/layui/css/layui.css"><link rel="stylesheet" href="/assets/luna/main.css?v=mobile-header-20261009"><link rel="stylesheet" href="/assets/luna/storefront.css"></head>
+<body>
+<div class="background"></div>
+<div class="main"><div class="layui-row"><div class="layui-col-md8 layui-col-md-offset2"><div class="main-box" style="text-align:center">
+{{template "cldx-content" .}}
+</div></div></div></div>
 <script>
 (function () {
-  // Polls every 5s; the server keeps the wallet's last answer per order for 10s
-  // (receiptThrottle), so this loop costs at most one wallet call per window.
   var sn = "{{.Order.SN}}";
   var state = document.getElementById("pay-state");
   var timer = setInterval(function () {
@@ -27,4 +20,4 @@
   }, 5000);
 })();
 </script>
-{{template "foot" .}}{{end}}
+</body></html>{{end}}

@@ -344,30 +344,17 @@ func TestSearchByEmailHidesCards(t *testing.T) {
 	if maskSN(o.SN) != masked || strings.Contains(maskSN(o.SN), o.SN[:4]) || maskSN("ABCD") != "****" {
 		t.Fatalf("maskSN: %q", maskSN(o.SN))
 	}
-	for _, theme := range []string{"unicorn", "luna", "hyper"} {
-		if err := app.live().PutSetting(context.Background(), "template", theme); err != nil {
-			t.Fatal(err)
-		}
-		app.live().InvalidateSite()
-		if got := app.live().Site(context.Background()).Template; got != theme {
-			t.Fatalf("theme %q not applied: %q", theme, got)
-		}
-		w := search("email=audit%40example.com", nil)
-		body := w.Body.String()
-		if w.Code != 200 || !strings.Contains(body, masked) || strings.Contains(body, "AUDIT-SECRET") {
-			t.Fatalf("%s: email search: %d %s", theme, w.Code, body)
-		}
-		if strings.Contains(body, o.SN) || strings.Contains(body, unpaid.SN) {
-			t.Fatalf("%s: email search disclosed a full order number: %s", theme, body)
-		}
-		if strings.Contains(body, "/bill/") || strings.Contains(body, "/detail-order-sn/") || strings.Contains(body, "继续支付") {
-			t.Fatalf("%s: email search linked to an order: %s", theme, body)
-		}
+	w := search("email=audit%40example.com", nil)
+	body := w.Body.String()
+	if w.Code != 200 || !strings.Contains(body, masked) || strings.Contains(body, "AUDIT-SECRET") {
+		t.Fatalf("email search: %d %s", w.Code, body)
 	}
-	if err := app.live().PutSetting(context.Background(), "template", "unicorn"); err != nil {
-		t.Fatal(err)
+	if strings.Contains(body, o.SN) || strings.Contains(body, unpaid.SN) {
+		t.Fatalf("email search disclosed a full order number: %s", body)
 	}
-	app.live().InvalidateSite()
+	if strings.Contains(body, "/bill/") || strings.Contains(body, "/detail-order-sn/") || strings.Contains(body, "继续支付") {
+		t.Fatalf("email search linked to an order: %s", body)
+	}
 	// The buyer's browser keeps its cards in the listing (numbers stay masked there; the
 	// browser search itself shows them in full).
 	rec := httptest.NewRecorder()
@@ -378,7 +365,7 @@ func TestSearchByEmailHidesCards(t *testing.T) {
 	}
 	browse := httptest.NewRequest("POST", "http://shop.test/search-order-by-browser", nil)
 	browse.AddCookie(cookie)
-	w := httptest.NewRecorder()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, browse)
 	if w.Code != 200 || !strings.Contains(w.Body.String(), o.SN) || !strings.Contains(w.Body.String(), "AUDIT-SECRET") {
 		t.Fatalf("browser search lost the full number or the card: %d", w.Code)

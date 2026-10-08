@@ -478,7 +478,7 @@ func TestStorefrontOffersOnlyReadyChannels(t *testing.T) {
 		return w.Body.String()
 	}
 	offers := func(body string, id int) bool {
-		return strings.Contains(body, fmt.Sprintf(`name="payway" value="%d"`, id))
+		return strings.Contains(body, fmt.Sprintf(`data-id="%d"`, id))
 	}
 	// Neither ready: wallet secret unset, platform key missing.
 	body := page()
